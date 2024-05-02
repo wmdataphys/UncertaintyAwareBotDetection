@@ -1,0 +1,47 @@
+{
+    "name": "BotDetection_v4",
+    "seed":8,
+    "model": {
+       "blocks": [64,128,512,1024,512,128,64,3],
+       "dropout_setval": 0.0
+    },
+    "dataset": {
+        "root_dir" : "/sciclone/home/gchewababarand/BotClassification",
+        "path_to_csv": "/sciclone/home/gchewababarand/BotClassification/data/features-2.csv"
+    },
+    "lr_scheduler": {
+        "step_size": 50,
+        "gamma": 0.1
+    },
+    "optimizer": {
+        "lr": 5e-4,
+        "huber_delta":1.0,
+        "huber_scale":1.0,
+    	"log_sum_scale":1.0,
+    	"phys_scale":1.0,
+    	"KL_scale":0.0001
+    },
+    "num_epochs":100,
+    "dataloader": {
+        "split":[0.7,0.15,0.15],
+        "train": {
+            "batch_size": 1024
+    	},
+        "val": {
+            "batch_size": 1024
+        },
+        "test": {
+            "batch_size": 100
+        }
+    },
+    "output": {
+	"dir": "/sciclone/data10/gchewababarand/BotModels"
+    },
+    "Inference": {
+        "MNF_model":"a",
+        "DNN_model": "mlp",
+        "out_dir": "out_dir",
+        "out_file": "Inference.csv"
+    }
+}
+
