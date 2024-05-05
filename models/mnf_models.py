@@ -10,26 +10,26 @@ class MNFNet_v3(nn.Sequential):
     def __init__(self, **kwargs: Any) -> None:
         """Initialize the model."""
         super(MNFNet_v3,self).__init__()
+
         self.act = nn.SELU()
-        self.L1 = MNFLinear(133, 64,**kwargs)
-        self.BN1 = BatchNorm1d(64)
-        self.L2 = MNFLinear(64, 128, **kwargs)
+
+        self.L1 = MNFLinear(133, 256,**kwargs)
+        self.BN1 = BatchNorm1d(256)
+
+        self.L2 = MNFLinear(256, 128, **kwargs)
         self.BN2 = BatchNorm1d(128)
-        self.L3 = MNFLinear(128, 256, **kwargs)
-        self.BN3 = BatchNorm1d(256)
-        self.L4 = MNFLinear(256, 128, **kwargs)
-        self.BN4 = BatchNorm1d(128)
-        self.L5 = MNFLinear(128, 64, **kwargs)
-        self.BN5 = BatchNorm1d(64)
+
+        self.L3 = MNFLinear(128, 64, **kwargs)
+        self.BN3 = BatchNorm1d(64)
+
         self.classification_head = MNFLinear(64, 1, **kwargs)
+
         self.sigmoid = nn.Sigmoid()
 
     def forward(self,x):
         x = self.act(self.BN1(self.L1(x)))
         x = self.act(self.BN2(self.L2(x)))
         x = self.act(self.BN3(self.L3(x)))
-        x = self.act(self.BN4(self.L4(x)))
-        x = self.act(self.BN5(self.L5(x)))
         cls = self.sigmoid(self.classification_head(x))
         return cls.squeeze(1)
 

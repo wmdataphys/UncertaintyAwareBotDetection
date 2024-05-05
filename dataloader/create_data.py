@@ -15,6 +15,7 @@ def create_dataset(file_path):
 
     y = feature_df['class'].values
     y_binary = (y == 'human').astype(np.float64)
-    X_train,X_test,y_train,y_test = tts(x, y_binary, test_size=0.25, random_state=1693)
+    X_train_temp,X_test,y_train_temp,y_test = tts(x, y_binary, test_size=0.2, random_state=42)
+    X_train,X_val,y_train,y_val = tts(X_train_temp, y_train_temp, test_size=0.25, random_state=42)
 
-    return X_train,X_test,y_train,y_test
+    return X_train,X_test,X_val,y_train,y_test,y_val

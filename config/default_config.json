@@ -31,16 +31,16 @@
             "batch_size": 1024
         },
         "test": {
-            "batch_size": 100
+            "batch_size": 20
         }
     },
     "output": {
 	"dir": "/sciclone/data10/gchewababarand/BotModels"
     },
     "Inference": {
-        "MNF_model":"a",
+        "MNF_model":"/sciclone/data10/gchewababarand/BotModels/BotDetection_v4___May-02-2024/BotDetection_v4_epoch99_train_loss_2.043861.pth",
         "DNN_model": "mlp",
-        "out_dir": "out_dir",
+        "out_dir": "./",
         "out_file": "Inference.csv"
     }
 }

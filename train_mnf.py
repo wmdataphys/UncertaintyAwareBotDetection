@@ -46,16 +46,18 @@ def main(config,resume):
     # Load the dataset
     print('Creating Loaders.')
     
-    X_train,X_test,y_train,y_test = create_dataset(config['dataset']['path_to_csv'])
+    X_train,X_test,X_val,y_train,y_test,y_val = create_dataset(config['dataset']['path_to_csv'])
     train_dataset = TensorDataset(torch.tensor(X_train),torch.tensor(y_train))
+    val_dataset = TensorDataset(torch.tensor(X_val),torch.tensor(y_val))
     test_dataset = TensorDataset(torch.tensor(X_test),torch.tensor(y_test))
 
     history = {'train_loss':[],'val_loss':[],'lr':[]}
     run_val = False
     print("Training Size: {0}".format(len(train_dataset)))
+    print("Validation Size: {0}".format(len(val_dataset)))
     print("Testing Size: {0}".format(len(test_dataset)))
 
-    train_loader,test_loader = CreateLoaders(train_dataset,test_dataset,config)
+    train_loader,val_loader,test_loader = CreateLoaders(train_dataset,val_dataset,test_dataset,config)
 
      # Create the model
     net = MNFNet_v3()
@@ -118,12 +120,11 @@ def main(config,resume):
         for i, data in enumerate(train_loader):
             inputs  = data[0].to('cuda').float()
             y  = data[1].to('cuda').float()
-            #print(y.shape)
             optimizer.zero_grad()
 
             with torch.set_grad_enabled(True):
                 y_pred = net(inputs)
-            #print("Pred",y_pred.shape)
+
             bce = loss_fn(y_pred,y)
             kl_div = config['optimizer']['KL_scale']*net.kl_div() / len(train_loader)
             loss = bce + kl_div 
@@ -150,24 +151,17 @@ def main(config,resume):
         if run_val:
             net.eval()
             val_loss = 0.0
-            val_rec_loss = 0.0
             val_kl_div = 0.0
-            val_huber = 0.0
-            val_phys = 0.0
+            val_acc = 0.0
             with torch.no_grad():
                 for i, data in enumerate(val_loader):
                     inputs  = data[0].to('cuda').float()
-                    y  = data[1][:,:3].to('cuda').float()
-                    log_S_cond = data[1][:,-2].to('cuda').float()
-                    log_Q2 = data[1][:,-1].to('cuda').float()
+                    y  = data[1].to('cuda').float()
+                    # log_S_cond = data[1][:,-2].to('cuda').float()
+                    # log_Q2 = data[1][:,-1].to('cuda').float()
 
-                    targets,log_devs2 = net(inputs)
-                    vr,vh,vp = BNN_Loss_Phys(targets,log_devs2,y,scalerY,log_S_cond,log_Q2)
-
-                    val_rec_loss += vr
-                    val_huber += vh
-                    val_phys += vp
-                    val_kl_div += config['optimizer']['KL_scale']*net.kl_div() / len(val_loader)
+                    kl_div = config['optimizer']['KL_scale']*net.kl_div() / len(train_loader)
+                    loss = bce + kl_div 
 
                 val_rec_loss = val_rec_loss/len(val_loader)
                 val_kl_div = val_kl_div / len(val_loader)
