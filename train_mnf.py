@@ -18,7 +18,6 @@ from pickle import load
 from models.mnf_models import MNFNet_v3
 import torch.nn.functional as F
 from torch.utils.data import Subset
-from loss_utils import BNN_Loss_Phys
 from dataloader.create_data import create_dataset
 
 def main(config,resume):
@@ -28,6 +27,9 @@ def main(config,resume):
     np.random.seed(config['seed'])
     random.seed(config['seed'])
     torch.cuda.manual_seed(config['seed'])
+
+    if not os.path.exists(config["output"]["dir"]):
+        os.makedirs(config["output"]["dir"])
 
     # Create experiment name
     curr_date = datetime.now()
@@ -52,7 +54,7 @@ def main(config,resume):
     test_dataset = TensorDataset(torch.tensor(X_test),torch.tensor(y_test))
 
     history = {'train_loss':[],'val_loss':[],'lr':[]}
-    run_val = False
+    run_val = config['run_val']
     print("Training Size: {0}".format(len(train_dataset)))
     print("Validation Size: {0}".format(len(val_dataset)))
     print("Testing Size: {0}".format(len(test_dataset)))
@@ -153,26 +155,31 @@ def main(config,resume):
             val_loss = 0.0
             val_kl_div = 0.0
             val_acc = 0.0
+            val_bce = 0.0
             with torch.no_grad():
                 for i, data in enumerate(val_loader):
                     inputs  = data[0].to('cuda').float()
                     y  = data[1].to('cuda').float()
-                    # log_S_cond = data[1][:,-2].to('cuda').float()
-                    # log_Q2 = data[1][:,-1].to('cuda').float()
+                    y_pred = net(inputs)
 
+                    bce = loss_fn(y_pred,y)
                     kl_div = config['optimizer']['KL_scale']*net.kl_div() / len(train_loader)
                     loss = bce + kl_div 
+                    val_acc += (torch.sum(torch.round(y_pred) == y)).item() / len(y)
 
-                val_rec_loss = val_rec_loss/len(val_loader)
+                    val_loss += loss
+                    val_bce += bce
+                    val_kl_div += kl_div
+
                 val_kl_div = val_kl_div / len(val_loader)
-                val_huber = val_huber / len(val_loader)
-                val_phys = val_phys / len(val_loader)
-                val_loss = val_rec_loss + val_kl_div + val_phys
+                val_bce /= len(val_loader)
+                val_loss /= len(val_loader)
                 val_loss = val_loss.cpu().numpy()
+                val_acc = val_acc/len(val_loader)
 
             history['val_loss'].append(val_loss)
 
-            kbar.add(1, values=[("val_loss" ,val_loss),("val_reg_loss",val_rec_loss.item()),("val_MSE",val_huber.item()),("val_phys",val_phys.item()),("val_kl_loss",val_kl_div.item())])
+            kbar.add(1, values=[("val_loss" ,val_loss),("val_bce",val_bce.item()),("val_kl_loss",val_kl_div.item()),("val_acc",val_acc)])
 
             name_output_file = config['name']+'_epoch{:02d}_val_loss_{:.6f}.pth'.format(epoch, val_loss)
 

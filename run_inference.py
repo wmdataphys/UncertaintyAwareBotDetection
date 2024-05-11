@@ -5,6 +5,7 @@ import torch
 import random
 import numpy as np
 from datetime import datetime
+import time
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from dataloader.dataloader import CreateLoaders
@@ -22,7 +23,91 @@ from torch.utils.data import Subset
 from loss_utils import BNN_Loss
 from dataloader.create_data import create_dataset
 
-def main(config):
+def run_bayes_eval(net,test_loader,device):
+    kbar = pkbar.Kbar(target=len(test_loader),width=20, always_stateful=False)
+    # This performs sampling for the MNF and runs MLP evaluation
+    mypreds_r_MNF = []
+    mypreds_r_MNF_std = []
+    net.eval()
+    feats = []
+    mus = []
+    samples = 10000
+    mypreds_r = []
+    true_y = []
+    start = time.time()
+    for i,data in enumerate(test_loader):
+
+        inputs = data[0].numpy()
+
+        temp = []
+        for j in range(len(inputs)):
+            temp.append(np.expand_dims(inputs[j],0).repeat(samples,0))
+
+        inputs = torch.tensor(np.concatenate(temp)).to(device).float()
+        y = data[1].numpy()
+        true_y.append(y)
+
+        with torch.set_grad_enabled(False):
+            targets = net(inputs)
+
+        targets = targets.reshape(-1,samples).detach().cpu().numpy()
+        mypreds_r_MNF.append(np.mean(targets,axis=1))
+        mypreds_r_MNF_std.append(np.std(targets,axis=1))
+
+        kbar.update(i)
+    end = time.time()
+    print("Elapsed Time: ",end - start)
+    mypreds_r_MNF = np.concatenate(mypreds_r_MNF)
+    epistemic = np.concatenate(mypreds_r_MNF_std)
+    true_y = np.concatenate(true_y)
+    print(mypreds_r_MNF.shape,epistemic.shape,true_y.shape)
+    print('Time per account: ',(end - start) / len(mypreds_r_MNF))
+
+    preds_frame = pd.DataFrame(mypreds_r_MNF)
+    preds_frame.columns = ['y_hat']
+    preds_frame['y_hat_sigma'] = epistemic
+    preds_frame = preds_frame.dropna()
+    preds_frame['y_true'] = true_y
+
+    return preds_frame
+
+
+def run_mlp_eval(net,test_loader,device):
+    kbar = pkbar.Kbar(target=len(test_loader),width=20, always_stateful=False)
+    # This performs sampling for the MNF and runs MLP evaluation
+    mlp_preds = []
+    true_y = []
+    for i,data in enumerate(test_loader):
+        inputs = data[0].to(device).float()
+        y = data[1].numpy()
+        true_y.append(y)
+
+        with torch.set_grad_enabled(False):
+            targets = net(inputs).detach().cpu().numpy()
+
+        mlp_preds.append(targets)
+
+        kbar.update(i)
+
+    mlp_preds = np.concatenate(mlp_preds)
+    true_y = np.concatenate(true_y)
+
+    preds_frame = pd.DataFrame(mlp_preds)
+    preds_frame.columns = ['y_hat_mlp']
+    preds_frame = preds_frame.dropna()
+    preds_frame['y_true_mlp'] = true_y
+    return preds_frame
+
+def main(config,mlp_eval):
+    if torch.cuda.is_available():
+        device = 'cuda'
+    else:
+        device = 'cpu'
+
+    if not mlp_eval:
+        print("Running only Bayesian evalution. See argparser.")
+    else:
+        print("Running Bayesian and DNN evaluation.")
 
     # Setup random seed
     torch.manual_seed(config['seed'])
@@ -57,67 +142,32 @@ def main(config):
 
      # Load the MNF model
     net = MNFNet_v3()
-    net.to('cuda')
+    net.to(device)
     dict = torch.load(config['Inference']['MNF_model'])
     net.load_state_dict(dict['net_state_dict'])
 
-    kbar = pkbar.Kbar(target=len(test_loader),width=20, always_stateful=False)
-    # This performs sampling for the MNF and runs MLP evaluation
-    mypreds_r_MNF = []
-    mypreds_r_MNF_std = []
-    net.eval()
-    feats = []
-    mus = []
-    samples = 10000
-    mypreds_r = []
-    true_y = []
-    for i,data in enumerate(test_loader):
+    bayes_frame = run_bayes_eval(net,test_loader,device)
 
-        inputs = data[0].numpy()
+    if mlp_eval:
+        mlp = MLP()
+        mlp.to(device)
+        dict = torch.load(config['Inference']['DNN_model'])
+        mlp.load_state_dict(dict['net_state_dict'])
+        mlp_frame = run_mlp_eval(mlp,test_loader,device)
 
-        temp = []
-        for j in range(len(inputs)):
-            temp.append(np.expand_dims(inputs[j],0).repeat(samples,0))
-
-        inputs = torch.tensor(np.concatenate(temp)).to('cuda').float()
-        y = data[1].numpy()
-        true_y.append(y)
-
-        with torch.set_grad_enabled(False):
-            targets = net(inputs)
-
-        for q in range(config['dataloader']['test']['batch_size']):
-            de = targets.detach().cpu().numpy()[q*samples:(q+1)*samples]
-            mypreds_r_MNF.append(de.mean(0))
-            mypreds_r_MNF_std.append(de.std(0))
-        if i == 1000:
-            break
-
-        kbar.update(i)
-
-    mypreds_r_MNF = np.array(mypreds_r_MNF)
-    epistemic = np.array(mypreds_r_MNF_std)
-    true_y = np.concatenate(true_y)
-    print(mypreds_r_MNF.shape,epistemic.shape,true_y.shape)
-
-    preds_frame = pd.DataFrame(mypreds_r_MNF)
-    preds_frame.columns = ['y_hat']
-    preds_frame['y_hat_sigma'] = epistemic
-    preds_frame = preds_frame.dropna()
-    preds_frame['y_true'] = true_y
-
+    preds_frame = pd.concat([bayes_frame,mlp_frame],axis=1)
     # Save it
     save_path = os.path.join(config['Inference']['out_dir'],config['Inference']['out_file'])
     preds_frame.to_csv(save_path,sep=',',index=None)
-
 
 if __name__=='__main__':
     # PARSE THE ARGS
     parser = argparse.ArgumentParser(description='Inference')
     parser.add_argument('-c', '--config', default='config.json',type=str,
                         help='Path to the config file (default: config.json)')
+    parser.add_argument('-m','--mlp_eval',default=0,type=int,help='Run MLP inference?')
     args = parser.parse_args()
 
     config = json.load(open(args.config))
 
-    main(config)
+    main(config,bool(args.mlp_eval))

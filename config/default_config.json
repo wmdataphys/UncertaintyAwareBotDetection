@@ -1,13 +1,14 @@
 {
-    "name": "BotDetection_v4",
+    "name": "BotDetection_v4_MLP",
     "seed":8,
+    "run_val": 1,
     "model": {
        "blocks": [64,128,512,1024,512,128,64,3],
        "dropout_setval": 0.0
     },
     "dataset": {
-        "root_dir" : "/sciclone/home/gchewababarand/BotClassification",
-        "path_to_csv": "/sciclone/home/gchewababarand/BotClassification/data/features-2.csv"
+        "root_dir" : "BR-Project",
+        "path_to_csv": "data/features-2.csv"
     },
     "lr_scheduler": {
         "step_size": 50,
@@ -35,13 +36,14 @@
         }
     },
     "output": {
-	"dir": "/sciclone/data10/gchewababarand/BotModels"
+	"dir": "Trained_Models"
     },
     "Inference": {
-        "MNF_model":"/sciclone/data10/gchewababarand/BotModels/BotDetection_v4___May-02-2024/BotDetection_v4_epoch99_train_loss_2.043861.pth",
-        "DNN_model": "mlp",
+        "MNF_model":"Trained_Models/BotDetection_v4___May-10-2024/BotDetection_v4_epoch99_val_loss_2.070382.pth",
+        "DNN_model": "Trained_Models/BotDetection_v4_MLP___May-10-2024/BotDetection_v4_MLP_epoch99_val_loss_0.482666.pth",
         "out_dir": "./",
-        "out_file": "Inference.csv"
+        "out_file": "Inference_v2.csv",
+        "plot_dir": "Results"
     }
 }
 

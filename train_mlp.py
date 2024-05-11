@@ -18,7 +18,7 @@ from pickle import load
 from models.mnf_models import MLP
 import torch.nn.functional as F
 from torch.utils.data import Subset
-from loss_utils import BNN_Loss
+from dataloader.create_data import create_dataset
 
 def main(config,resume):
 
@@ -28,6 +28,9 @@ def main(config,resume):
     random.seed(config['seed'])
     torch.cuda.manual_seed(config['seed'])
 
+    if not os.path.exists(config["output"]["dir"]):
+        os.makedirs(config["output"]["dir"])
+
     # Create experiment name
     curr_date = datetime.now()
     exp_name = config['name'] + '___' + curr_date.strftime('%b-%d-%Y___%H:%M:%S')
@@ -36,85 +39,22 @@ def main(config,resume):
 
     # Create directory structure
     output_folder = config['output']['dir']
-    os.mkdir(os.path.join(output_folder,exp_name))
+    if not os.path.exists(os.path.join(output_folder,exp_name)):
+        os.mkdir(os.path.join(output_folder,exp_name))
     with open(os.path.join(output_folder,exp_name,'config.json'),'w') as outfile:
         json.dump(config, outfile)
 
 
     # Load the dataset
     print('Creating Loaders.')
-    pandas_df = pd.read_csv(config['dataset']['path_to_csv'],sep=',',index_col=None)
-    X = np.c_[
-        pandas_df['e_ecal_over_trk_ratio'].to_numpy(),
-        pandas_df['n_towers_40'].to_numpy(),
-        pandas_df['eta_pho_closest_to_ebeam'].to_numpy(),
-        pandas_df['e_pho_closest_to_ebeam'].to_numpy(),
-        pandas_df['dphi_pho_closest_to_ebeam'].to_numpy(),
-        pandas_df['obs_e_pz'].to_numpy(),
-        pandas_df['obs_e_e'].to_numpy(),
-        pandas_df['obs_hfs_pz'].to_numpy(),
-        pandas_df['obs_hfs_e'].to_numpy(),
-        pandas_df['rot_pt1'].to_numpy(),
-        pandas_df['rot_Empz1'].to_numpy(),
-        pandas_df['rot_pt2'].to_numpy(),
-        pandas_df['obs_pzbal'].to_numpy(),
-        pandas_df['obs_ptbal'].to_numpy(),
-        pandas_df['obs_dphi'].to_numpy(),
-    ]
+    
+    X_train,X_test,X_val,y_train,y_test,y_val = create_dataset(config['dataset']['path_to_csv'])
+    train_dataset = TensorDataset(torch.tensor(X_train),torch.tensor(y_train))
+    val_dataset = TensorDataset(torch.tensor(X_val),torch.tensor(y_val))
+    test_dataset = TensorDataset(torch.tensor(X_test),torch.tensor(y_test))
 
-    x_ = pandas_df['from_tlv_gen_x'].to_numpy()
-    y_ = pandas_df['from_tlv_gen_y'].to_numpy()
-    Q2_ = pandas_df['from_tlv_gen_Q2'].to_numpy()
-    log_S = np.log(Q2_/(x_*y_))
-    gen_log_Q2 = pandas_df['gen_log_Q2'].to_numpy()
-    #-- targets for regression
-    Y_r = np.c_[
-        pandas_df['gen_log_x'].to_numpy(),
-        pandas_df['gen_log_Q2'].to_numpy(),
-        pandas_df['gen_log_y'].to_numpy()
-    ]
-
-
-    GY = pandas_df['from_tlv_gen_y'].to_numpy()
-    pth = os.path.join(output_folder,'%s-scalers' % config['name'])
-
-    print("Creating StandardScalers.")
-    scaler = StandardScaler()
-    scaler.fit(X)
-    X = scaler.transform(X)
-    scalerY = StandardScaler()
-    scalerY.fit(Y_r)
-    Y_r = scalerY.transform(Y_r)
-    Y_r = np.append(Y_r,np.c_[log_S],axis=1)
-    Y_r = np.append(Y_r,np.c_[gen_log_Q2],axis=1)
-    print("X: ",X.max(),X.min())
-    print("Y: ",Y_r.max(),Y_r.min())
-    try:
-        os.mkdir(pth)
-    except:
-        print('\n  Dir %s-scalers already exists\n\n' % pth )
-
-
-    print('\n\n Saving the input and learning target scalers:\n')
-    print('    %s-scalers/input_scaler.pkl' % config['name'] )
-    print('    %s-scalers/target_scaler.pkl' % config['name'] )
-
-    dump( scaler, open(os.path.join(pth,'input_scaler.pkl') , 'wb'))
-    dump( scalerY, open(os.path.join(pth,'target_scaler.pkl') , 'wb'))
-
-
-
-    print("No files specified, using a split of 70/15/15%")
-    full_dataset = TensorDataset(torch.tensor(X),torch.tensor(Y_r))
-    train_ids = list(np.load(os.path.join(config['dataset']['idx_path'],"athena_train_indices.npy")))
-    val_ids = list(np.load(os.path.join(config['dataset']['idx_path'],"athena_val_indices.npy")))
-    test_ids = list(np.load(os.path.join(config['dataset']['idx_path'],"athena_test_indices.npy")))
-
-    train_dataset = Subset(full_dataset,train_ids)
-    val_dataset = Subset(full_dataset,val_ids)
-    test_dataset = Subset(full_dataset,test_ids)
     history = {'train_loss':[],'val_loss':[],'lr':[]}
-    run_val = True
+    run_val = config['run_val']
     print("Training Size: {0}".format(len(train_dataset)))
     print("Validation Size: {0}".format(len(val_dataset)))
     print("Testing Size: {0}".format(len(test_dataset)))
@@ -122,7 +62,7 @@ def main(config,resume):
     train_loader,val_loader,test_loader = CreateLoaders(train_dataset,val_dataset,test_dataset,config)
 
      # Create the model
-    net = MLP(config['model']['blocks'],config['model']['dropout_setval'])
+    net = MLP()
     t_params = sum(p.numel() for p in net.parameters())
     print("Network Parameters: ",t_params)
     net.to('cuda')
@@ -167,7 +107,7 @@ def main(config,resume):
 
     # Define your loss function
 
-    loss_fn = torch.nn.HuberLoss(reduction='mean', delta=config['optimizer']['huber_delta'])
+    loss_fn = torch.nn.BCELoss() # Utilizes the predefined BNN loss
 
     for epoch in range(startEpoch,num_epochs):
 
@@ -181,26 +121,22 @@ def main(config,resume):
 
         for i, data in enumerate(train_loader):
             inputs  = data[0].to('cuda').float()
-            y  = data[1][:,:3].to('cuda').float()
-            log_S_cond = data[1][:,-2].to('cuda').float()
-            log_Q2 = data[1][:,-1].to('cuda').float()
-            # reset the gradient
+            y  = data[1].to('cuda').float()
             optimizer.zero_grad()
 
-            # forward pass, enable to track our gradient
             with torch.set_grad_enabled(True):
-                targets = net(inputs)
+                y_pred = net(inputs)
 
-            loss = loss_fn(targets,y)
-            # backprop
+            loss = loss_fn(y_pred,y)
+            train_acc = (torch.sum(torch.round(y_pred) == y)).item() / len(y)
+
             loss.backward()
             optimizer.step()
 
-            # statistics
+
             running_loss += loss.item() * inputs.shape[0]
 
-            kbar.update(i, values=[("loss", loss.item())])
-
+            kbar.update(i, values=[("bce",loss.item()),("Train Accuracy",train_acc)])
             global_step += 1
 
         scheduler.step()
@@ -214,21 +150,23 @@ def main(config,resume):
         if run_val:
             net.eval()
             val_loss = 0.0
+            val_acc = 0.0
             with torch.no_grad():
                 for i, data in enumerate(val_loader):
                     inputs  = data[0].to('cuda').float()
-                    y  = data[1][:,:3].to('cuda').float()
-                    log_S_cond = data[1][:,-2].to('cuda').float()
-                    log_Q2 = data[1][:,-1].to('cuda').float()
+                    y  = data[1].to('cuda').float()
+                    y_pred = net(inputs)
 
-                    targets= net(inputs)
-                    val_loss += loss_fn(targets,y)
-
-                val_loss = val_loss.cpu().numpy()/len(val_loader)
+                    bce = loss_fn(y_pred,y)
+                    val_acc += (torch.sum(torch.round(y_pred) == y)).item() / len(y)
+                    val_loss += bce
+    
+                val_loss /= len(val_loader)
+                val_acc = val_acc/len(val_loader)
 
             history['val_loss'].append(val_loss)
 
-            kbar.add(1, values=[("val_loss" ,val_loss)])
+            kbar.add(1, values=[("val_bce",val_loss.item()),("val_acc",val_acc)])
 
             name_output_file = config['name']+'_epoch{:02d}_val_loss_{:.6f}.pth'.format(epoch, val_loss)
 
