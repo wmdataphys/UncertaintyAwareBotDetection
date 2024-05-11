@@ -5,6 +5,7 @@ import torch
 import random
 import numpy as np
 from datetime import datetime
+import time
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from dataloader.dataloader import CreateLoaders
@@ -33,6 +34,7 @@ def run_bayes_eval(net,test_loader,device):
     samples = 10000
     mypreds_r = []
     true_y = []
+    start = time.time()
     for i,data in enumerate(test_loader):
 
         inputs = data[0].numpy()
@@ -53,11 +55,13 @@ def run_bayes_eval(net,test_loader,device):
         mypreds_r_MNF_std.append(np.std(targets,axis=1))
 
         kbar.update(i)
-
+    end = time.time()
+    print("Elapsed Time: ",end - start)
     mypreds_r_MNF = np.concatenate(mypreds_r_MNF)
     epistemic = np.concatenate(mypreds_r_MNF_std)
     true_y = np.concatenate(true_y)
     print(mypreds_r_MNF.shape,epistemic.shape,true_y.shape)
+    print('Time per account: ',(end - start) / len(mypreds_r_MNF))
 
     preds_frame = pd.DataFrame(mypreds_r_MNF)
     preds_frame.columns = ['y_hat']

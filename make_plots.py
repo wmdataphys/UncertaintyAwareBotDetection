@@ -13,8 +13,8 @@ def plot_auc_mlp(y_pred,y_true,out_folder):
     auc_ = auc(fpr,tpr)
     print("DNN AUC: ",auc_)
     plt.figure()
-    plt.plot(fpr,tpr,color='red', lw=2, label='ROC Curve. (area = %0.2f)' % auc_)
-    plt.plot([0, 1], [0, 1], color='k', lw=2, linestyle='--')
+    plt.plot(fpr,tpr,color='red', lw=2,linestyle='--', label='ROC Curve. (area = %0.2f)' % auc_)
+    plt.plot([0, 1], [0, 1], color='k', lw=1, linestyle='-')
     plt.xlim([0.0, 1.0])
     plt.ylim([0.0, 1.05])
     plt.title('Receiver Operating Characteristic (ROC) Curve - DNN', fontsize=25, pad=20)
@@ -62,6 +62,7 @@ def plot_auc_bayes(y_pred,sigma,y_true,out_folder,n_strap=1000):
     ax[0].plot(mean_fpr, mean_tpr, color='k', lw=1,linestyle='--' ,label=r'ROC curve (area = {0:.3f} $\pm$ {1:.3f})'.format(roc_auc,roc_auc_sigma))
     ax[0].fill_between(mean_fpr, mean_tpr - 5 * tpr_sigma, mean_tpr + 5 * tpr_sigma, color='blue', alpha=0.5, label=r'$5\sigma$ TPR Band')
     ax[0].fill_betweenx(mean_tpr, mean_fpr - 5 * fpr_sigma, mean_fpr + 5 * fpr_sigma, color='red', alpha=0.5, label=r'$5\sigma$ FPR Band')
+    ax[0].plot([0, 1], [0, 1], color='k', lw=1, linestyle='-')
     ax[0].set_xlim([0.0, 1.0])
     ax[0].set_ylim([0.0, 1.05])
     ax[0].set_xlabel('False Positive Rate', fontsize=25)
@@ -73,6 +74,7 @@ def plot_auc_bayes(y_pred,sigma,y_true,out_folder,n_strap=1000):
     ax[1].fill_between(mean_fpr, mean_tpr - 5 * tpr_sigma, mean_tpr + 5 * tpr_sigma, color='blue', alpha=0.5, label=r'$5\sigma$ TPR Band')
     ax[1].set_xlim([0.0, 1.0])
     ax[1].set_ylim([0.0, 1.05])
+    ax[1].plot([0, 1], [0, 1], color='k', lw=1, linestyle='-')
     ax[1].set_xlabel('False Positive Rate', fontsize=25)
     ax[1].set_title('Receiver Operating Characteristic (ROC) Curve - BNN', fontsize=25, pad=20)
     ax[1].legend(loc="lower right", fontsize=16)
@@ -82,6 +84,7 @@ def plot_auc_bayes(y_pred,sigma,y_true,out_folder,n_strap=1000):
     ax[2].fill_betweenx(mean_tpr, mean_fpr - 5 * fpr_sigma, mean_fpr + 5 * fpr_sigma, color='red', alpha=0.5, label=r'$5\sigma$ FPR Band')
     ax[2].set_xlim([0.0, 1.0])
     ax[2].set_ylim([0.0, 1.05])
+    ax[2].plot([0, 1], [0, 1], color='k', lw=1, linestyle='-')
     ax[2].set_xlabel('False Positive Rate', fontsize=25)
     ax[2].legend(loc="lower right", fontsize=16)
 
@@ -90,7 +93,7 @@ def plot_auc_bayes(y_pred,sigma,y_true,out_folder,n_strap=1000):
         ax_i.tick_params(axis='both', which='minor', labelsize=16)
         ax_i.grid(True)
 
-    plt.subplots_adjust(wspace=0.05)
+    plt.subplots_adjust(wspace=0.1)
     out_path_DLL_ROC = os.path.join(out_folder, "ROC.pdf")
     plt.savefig(out_path_DLL_ROC, bbox_inches='tight')
     plt.close()
@@ -141,9 +144,6 @@ def main(config,mlp_eval):
         y_true_mlp = results['y_true_mlp'].to_numpy()
 
         plot_auc_mlp(y_pred_mlp,y_true_mlp,out_dir)
-
-
-
 
 
 if __name__=='__main__':
