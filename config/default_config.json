@@ -32,7 +32,7 @@
             "batch_size": 1024
         },
         "test": {
-            "batch_size": 20
+            "batch_size": 75
         }
     },
     "output": {
@@ -41,8 +41,8 @@
     "Inference": {
         "MNF_model":"Trained_Models/BotDetection_v4___May-10-2024/BotDetection_v4_epoch99_val_loss_2.070382.pth",
         "DNN_model": "Trained_Models/BotDetection_v4_MLP___May-10-2024/BotDetection_v4_MLP_epoch99_val_loss_0.482666.pth",
-        "out_dir": "./",
-        "out_file": "Inference_v2.csv",
+        "out_dir": "Inference",
+        "out_file": "Inference.csv",
         "plot_dir": "Results"
     }
 }

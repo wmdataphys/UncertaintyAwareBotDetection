@@ -14,13 +14,11 @@ import pkbar
 import torch.optim as optim
 from torch.optim import lr_scheduler
 import torch.nn as nn
-#from models.maf import MAF
 import pandas as pd
 from pickle import load
 from models.mnf_models import MNFNet_v3, MLP
 import torch.nn.functional as F
 from torch.utils.data import Subset
-from loss_utils import BNN_Loss
 from dataloader.create_data import create_dataset
 
 def run_bayes_eval(net,test_loader,device):
@@ -56,12 +54,14 @@ def run_bayes_eval(net,test_loader,device):
 
         kbar.update(i)
     end = time.time()
+    print(" ")
     print("Elapsed Time: ",end - start)
     mypreds_r_MNF = np.concatenate(mypreds_r_MNF)
     epistemic = np.concatenate(mypreds_r_MNF_std)
     true_y = np.concatenate(true_y)
     print(mypreds_r_MNF.shape,epistemic.shape,true_y.shape)
     print('Time per account: ',(end - start) / len(mypreds_r_MNF))
+    print(" ")
 
     preds_frame = pd.DataFrame(mypreds_r_MNF)
     preds_frame.columns = ['y_hat']
@@ -124,6 +124,9 @@ def main(config,mlp_eval):
     # Create directory structure
     output_folder = config['Inference']['out_dir']
 
+    if not os.path.exists(output_folder):
+        os.makedirs(output_folder)
+
     X_train,X_test,X_val,y_train,y_test,y_val = create_dataset(config['dataset']['path_to_csv'])
     train_dataset = TensorDataset(torch.tensor(X_train),torch.tensor(y_train))
     val_dataset = TensorDataset(torch.tensor(X_val),torch.tensor(y_val))
@@ -154,10 +157,15 @@ def main(config,mlp_eval):
         dict = torch.load(config['Inference']['DNN_model'])
         mlp.load_state_dict(dict['net_state_dict'])
         mlp_frame = run_mlp_eval(mlp,test_loader,device)
+        preds_frame = pd.concat([bayes_frame,mlp_frame],axis=1)
+        print(" ")
+    else:
+        preds_frame = bayes_frame.copy()
 
-    preds_frame = pd.concat([bayes_frame,mlp_frame],axis=1)
     # Save it
     save_path = os.path.join(config['Inference']['out_dir'],config['Inference']['out_file'])
+    
+    print("Output file: ",save_path)
     preds_frame.to_csv(save_path,sep=',',index=None)
 
 if __name__=='__main__':
