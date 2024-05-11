@@ -125,8 +125,8 @@ def main(config,mlp_eval):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     print("Plots can be found in " + str(out_dir))
-    if os.path.exists(config['Inference']['out_file']):
-        results = pd.read_csv(config['Inference']['out_file'],sep=',',index_col=None)
+    if os.path.exists(os.path.join(config['Inference']['out_dir'],config['Inference']['out_file'])):
+        results = pd.read_csv(os.path.join(config['Inference']['out_dir'],config['Inference']['out_file']),sep=',',index_col=None)
     else:
         print("Please run inference first.")
         exit()
