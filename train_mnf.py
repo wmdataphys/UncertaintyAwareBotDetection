@@ -52,6 +52,7 @@ def main(config,resume):
     train_dataset = TensorDataset(torch.tensor(X_train),torch.tensor(y_train))
     val_dataset = TensorDataset(torch.tensor(X_val),torch.tensor(y_val))
     test_dataset = TensorDataset(torch.tensor(X_test),torch.tensor(y_test))
+    print(X_train.shape)
 
     history = {'train_loss':[],'val_loss':[],'lr':[]}
     run_val = config['run_val']
@@ -67,7 +68,7 @@ def main(config,resume):
     print("Network Parameters: ",t_params)
     net.to('cuda')
 
-    print(net)
+    #print(net)
 
 
     # Optimizer

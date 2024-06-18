@@ -150,6 +150,7 @@ def main(config,mlp_eval):
     net.load_state_dict(dict['net_state_dict'])
 
     bayes_frame = run_bayes_eval(net,test_loader,device)
+    bayes_frame = bayes_frame.dropna()
 
     if mlp_eval:
         mlp = MLP()
@@ -157,6 +158,7 @@ def main(config,mlp_eval):
         dict = torch.load(config['Inference']['DNN_model'])
         mlp.load_state_dict(dict['net_state_dict'])
         mlp_frame = run_mlp_eval(mlp,test_loader,device)
+        mlp_frame = mlp_frame.dropna()
         preds_frame = pd.concat([bayes_frame,mlp_frame],axis=1)
         print(" ")
     else:

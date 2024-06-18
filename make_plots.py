@@ -99,7 +99,7 @@ def plot_auc_bayes(y_pred,sigma,y_true,out_folder,n_strap=1000):
     plt.close()
 
 
-def validate_uncertainty(y_pred, sigma, out_folder):
+def validate_uncertainty(y_pred, sigma,y_true, out_folder):
     idx = np.argsort(y_pred)
     y_pred_sorted = y_pred[idx]
     sigma_sorted = sigma[idx]
@@ -119,6 +119,81 @@ def validate_uncertainty(y_pred, sigma, out_folder):
     plt.savefig(out_path_uncertainty, bbox_inches='tight')
     plt.close()
 
+    # Isolate false negatives
+    idx = np.where((y_pred.round() == 0.0) & (y_true == 1.0))[0]
+    false_negatives = y_pred[idx]
+    sigma_fn = sigma[idx]
+
+    idx = np.argsort(false_negatives)
+    false_negatives_sorted = false_negatives[idx]
+    sigma_fn_sorted = sigma_fn[idx]
+    plt.figure()
+    plt.hist2d(false_negatives_sorted, sigma_fn_sorted, bins=50, cmap='magma',density=True,norm=LogNorm())
+    cb = plt.colorbar(label='Log Density')
+    cb.set_label('Log Density', fontsize=25)
+    cb.ax.tick_params(labelsize=18)
+    plt.xlabel('Probability', fontsize=25)
+    plt.ylabel('Epistemic Uncertainty', fontsize=25)
+    plt.title(r'Epistemic Uncertainty as Function of Probability - False Negatives', fontsize=25, pad=20)
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.xlim(0,1)
+    #plt.grid(True)
+    out_path_uncertainty = os.path.join(out_folder, 'uncertainty_false_negatives.pdf')
+    plt.savefig(out_path_uncertainty, bbox_inches='tight')
+    plt.close()
+
+
+    # Isolate false positives
+    idx = np.where((y_pred.round() == 1.0) & (y_true == 0.0))[0]
+    false_positives = y_pred[idx]
+    sigma_fp = sigma[idx]
+
+    idx = np.argsort(false_positives)
+    false_positives_sorted = false_positives[idx]
+    sigma_fp_sorted = sigma_fp[idx]
+    plt.figure()
+    plt.hist2d(false_positives_sorted, sigma_fp_sorted, bins=50, cmap='magma',density=True,norm=LogNorm())
+    cb = plt.colorbar(label='Log Density')
+    cb.set_label('Log Density', fontsize=25)
+    cb.ax.tick_params(labelsize=18)
+    plt.xlabel('Probability', fontsize=25)
+    plt.ylabel('Epistemic Uncertainty', fontsize=25)
+    plt.title(r'Epistemic Uncertainty as Function of Probability - False Positives', fontsize=25, pad=20)
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.xlim(0,1)
+    #plt.grid(True)
+    out_path_uncertainty = os.path.join(out_folder, 'uncertainty_false_positives.pdf')
+    plt.savefig(out_path_uncertainty, bbox_inches='tight')
+    plt.close()
+
+    # Isolate correctly classified samples
+    idx = np.where((y_pred.round() == y_true))[0]
+    correct_samples = y_pred[idx]
+    sigma_correct = sigma[idx]
+
+    idx = np.argsort(correct_samples)
+    correct_samples_sorted = correct_samples[idx]
+    sigma_correct_sorted = sigma_correct[idx]
+    plt.figure()
+    plt.hist2d(correct_samples_sorted, sigma_correct_sorted, bins=50, cmap='magma',density=True,norm=LogNorm())
+    cb = plt.colorbar(label='Log Density')
+    cb.set_label('Log Density', fontsize=25)
+    cb.ax.tick_params(labelsize=18)
+    plt.xlabel('Probability', fontsize=25)
+    plt.ylabel('Epistemic Uncertainty', fontsize=25)
+    plt.title(r'Epistemic Uncertainty as Function of Probability - Correctly Identified', fontsize=25, pad=20)
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.xlim(0,1)
+    #plt.grid(True)
+    out_path_uncertainty = os.path.join(out_folder, 'uncertainty_correct_samples.pdf')
+    plt.savefig(out_path_uncertainty, bbox_inches='tight')
+    plt.close()
+
+
+
 def main(config,mlp_eval):
 
     out_dir = config['Inference']['plot_dir']
@@ -136,7 +211,7 @@ def main(config,mlp_eval):
     y_true = results['y_true'].to_numpy()
 
     plot_auc_bayes(predictions,sigma,y_true,out_dir)
-    validate_uncertainty(predictions,sigma,out_dir)
+    validate_uncertainty(predictions,sigma,y_true,out_dir)
 
 
     if mlp_eval:

@@ -13,7 +13,7 @@ class MNFNet_v3(nn.Sequential):
 
         self.act = nn.SELU()
 
-        self.L1 = MNFLinear(133, 256,**kwargs)
+        self.L1 = MNFLinear(193, 256,**kwargs)
         self.BN1 = BatchNorm1d(256)
 
         self.L2 = MNFLinear(256, 128, **kwargs)
@@ -45,7 +45,7 @@ class MLP(nn.Module):
     def __init__(self):
         super(MLP, self).__init__()
 
-        self.L1 = nn.Linear(133,256)
+        self.L1 = nn.Linear(193,256)
         self.BN1 = BatchNorm1d(256)
         self.L2 = nn.Linear(256,128)
         self.BN2 = BatchNorm1d(128)
