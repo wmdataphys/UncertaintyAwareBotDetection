@@ -164,7 +164,7 @@ def main(config,resume):
                 val_loss /= len(val_loader)
                 val_acc = val_acc/len(val_loader)
 
-            history['val_loss'].append(val_loss)
+            history['val_loss'].append(val_loss.item())
 
             kbar.add(1, values=[("val_bce",val_loss.item()),("val_acc",val_acc)])
 

@@ -22,9 +22,11 @@ def plot_auc_mlp(y_pred,y_true,out_folder):
     plt.xlabel('False Positive Rate', fontsize=25)
     plt.ylabel('True Positive Rate', fontsize=25)
     plt.legend(loc="best",fontsize=16)
-    plt.ylim(0,1)
     plt.xticks(fontsize=18)  # adjust fontsize as needed
     plt.yticks(fontsize=18)  # adjust fontsize as needed
+    plt.tick_params(axis='both', which='major', labelsize=18)
+    plt.tick_params(axis='both', which='minor', labelsize=16)
+    plt.grid(True)
     out_path_DLL_ROC = os.path.join(out_folder,"ROC_MLP.pdf")
     plt.savefig(out_path_DLL_ROC,bbox_inches='tight')
     plt.close()
@@ -237,6 +239,23 @@ def validate_uncertainty(y_pred, sigma,y_true,aleatoric, out_folder):
     plt.savefig(out_path_uncertainty, bbox_inches='tight')
     plt.close()
 
+def plot_loss(path_,method=None,out_dir="./"):
+    if method is None:
+        print("Please specify method in loss plotting.")
+        exit()
+
+    model_dictionary = torch.load(path_)
+    train_loss = model_dictionary['history']['train_loss']
+    val_loss = model_dictionary['history']['val_loss']
+
+    plt.plot(train_loss,color='red',linestyle='--',linewidth=2,label='Training Loss')
+    plt.plot(val_loss,color='blue',linestyle='--',linewidth=2,label='Validation Loss')
+    plt.xlabel("Epoch",fontsize=25)
+    plt.ylabel('Loss',fontsize=25)
+    plt.legend(loc='best')
+    plt.title("Loss - {0}".format(str(method)),fontsize=25)
+    plt.savefig(os.path.join(out_dir,str(method) + '_loss.pdf'),bbox_inches='tight')
+    plt.close()
 
 
 def main(config,mlp_eval):
@@ -259,23 +278,14 @@ def main(config,mlp_eval):
     plot_auc_bayes(predictions,sigma,y_true,aleatoric,out_dir)
     validate_uncertainty(predictions,sigma,y_true,aleatoric,out_dir)
 
-    model_dictionary = torch.load(config['Inference']['MNF_model'])
-    train_loss = model_dictionary['history']['train_loss']
-    val_loss = model_dictionary['history']['val_loss']
-
-    plt.plot(train_loss,color='red',linestyle='--',linewidth=2,label='Training Loss')
-    plt.plot(val_loss,color='blue',linestyle='--',linewidth=2,label='Validation Loss')
-    plt.xlabel("Epoch",fontsize=25)
-    plt.ylabel('Loss',fontsize=25)
-    plt.savefig(os.path.join(out_dir,'loss.pdf'),bbox_inches='tight')
-    plt.close()
-
+    plot_loss(config['Inference']['MNF_model'],"BNN",out_dir=out_dir)
 
     if mlp_eval:
         y_pred_mlp = results['y_hat_mlp'].to_numpy()
         y_true_mlp = results['y_true_mlp'].to_numpy()
 
         plot_auc_mlp(y_pred_mlp,y_true_mlp,out_dir)
+        plot_loss(config['Inference']['DNN_model'],"DNN",out_dir=out_dir)
 
 
 if __name__=='__main__':
