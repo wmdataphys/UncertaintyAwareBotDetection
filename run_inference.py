@@ -20,6 +20,7 @@ from models.mnf_models import MNFNet_v3, MLP
 import torch.nn.functional as F
 from torch.utils.data import Subset
 from dataloader.create_data import create_dataset
+import torch.nn.functional as F
 
 def run_bayes_eval(net,test_loader,device):
     kbar = pkbar.Kbar(target=len(test_loader),width=20, always_stateful=False)
@@ -31,6 +32,7 @@ def run_bayes_eval(net,test_loader,device):
     mus = []
     samples = 10000
     mypreds_r = []
+    aleatoric = []
     true_y = []
     start = time.time()
     for i,data in enumerate(test_loader):
@@ -46,11 +48,15 @@ def run_bayes_eval(net,test_loader,device):
         true_y.append(y)
 
         with torch.set_grad_enabled(False):
-            targets = net(inputs)
-
+            logits,sigmas = net(inputs)
+    
+        targets = F.sigmoid(logits)
+        p_sigma = F.sigmoid(logits)*(1.0 - F.sigmoid(logits)) * sigmas
         targets = targets.reshape(-1,samples).detach().cpu().numpy()
+        p_sigma = p_sigma.reshape(-1,samples).detach().cpu().numpy()
         mypreds_r_MNF.append(np.mean(targets,axis=1))
         mypreds_r_MNF_std.append(np.std(targets,axis=1))
+        aleatoric.append(np.mean(p_sigma,axis=1))
 
         kbar.update(i)
     end = time.time()
@@ -58,6 +64,7 @@ def run_bayes_eval(net,test_loader,device):
     print("Elapsed Time: ",end - start)
     mypreds_r_MNF = np.concatenate(mypreds_r_MNF)
     epistemic = np.concatenate(mypreds_r_MNF_std)
+    aleatoric = np.concatenate(aleatoric)
     true_y = np.concatenate(true_y)
     print(mypreds_r_MNF.shape,epistemic.shape,true_y.shape)
     print('Time per account: ',(end - start) / len(mypreds_r_MNF))
@@ -68,6 +75,7 @@ def run_bayes_eval(net,test_loader,device):
     preds_frame['y_hat_sigma'] = epistemic
     preds_frame = preds_frame.dropna()
     preds_frame['y_true'] = true_y
+    preds_frame['aleatoric'] = aleatoric
 
     return preds_frame
 

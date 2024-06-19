@@ -1,5 +1,5 @@
 {
-    "name": "BotDetection_NewData",
+    "name": "Epistemic_Aleatoric_V1",
     "seed":8,
     "run_val": 1,
     "model": {
@@ -26,7 +26,8 @@
     "dataloader": {
         "split":[0.7,0.15,0.15],
         "train": {
-            "batch_size": 1024
+            "batch_size": 1024,
+            "num_samples": 1000
     	},
         "val": {
             "batch_size": 1024
@@ -39,11 +40,11 @@
 	"dir": "Trained_Models"
     },
     "Inference": {
-        "MNF_model":"Trained_Models/BotDetection_NewData___Jun-18-2024/BotDetection_NewData_epoch99_val_loss_0.791384.pth",
+        "MNF_model": "Trained_Models/Epistemic_Aleatoric_V1___Jun-19-2024/Epistemic_Aleatoric_V1_epoch99_val_loss_0.790281.pth",
+        "MNF_model_EPI":"Trained_Models/BotDetection_NewData___Jun-18-2024/BotDetection_NewData_epoch99_val_loss_0.791384.pth",
         "DNN_model": "Trained_Models/BotDetection_v4_MLP___May-10-2024/BotDetection_v4_MLP_epoch99_val_loss_0.482666.pth",
-        "out_dir": "Inference_NewData",
-        "out_file": "Inference.csv",
-        "plot_dir": "Results_NewData"
+        "out_dir": "Aleatoric_Epistemic",
+        "out_file": "Inference.csv"
     }
 }
 

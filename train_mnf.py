@@ -119,20 +119,24 @@ def main(config,resume):
         ###################
         net.train()
         running_loss = 0.0
-
+        num_samples = config['dataloader']['train']['num_samples']
         for i, data in enumerate(train_loader):
             inputs  = data[0].to('cuda').float()
             y  = data[1].to('cuda').float()
             optimizer.zero_grad()
 
             with torch.set_grad_enabled(True):
-                y_pred = net(inputs)
+                logits,sigma = net(inputs)
+                logits = logits.unsqueeze(-1).expand(*logits.shape,num_samples)
+                sigma = sigma.unsqueeze(-1).expand(*sigma.shape,num_samples)
+                sampled_logits = logits + sigma * torch.normal(mean=0.0, std=1.0, size=logits.shape, device=logits.device)
+                sampled_p = F.sigmoid(sampled_logits.mean(dim=-1))
 
-            bce = loss_fn(y_pred,y)
+            bce = loss_fn(sampled_p,y)
             kl_div = config['optimizer']['KL_scale']*net.kl_div() / len(train_loader)
             loss = bce + kl_div 
 
-            train_acc = (torch.sum(torch.round(y_pred) == y)).item() / len(y)
+            train_acc = (torch.sum(torch.round(sampled_p) == y)).item() / len(y)
 
             loss.backward()
             optimizer.step()
@@ -161,12 +165,16 @@ def main(config,resume):
                 for i, data in enumerate(val_loader):
                     inputs  = data[0].to('cuda').float()
                     y  = data[1].to('cuda').float()
-                    y_pred = net(inputs)
+                    logits,sigma = net(inputs)
+                    logits = logits.unsqueeze(-1).expand(*logits.shape,num_samples)
+                    sigma = sigma.unsqueeze(-1).expand(*sigma.shape,num_samples)
+                    sampled_logits = logits + sigma * torch.normal(mean=0.0, std=1.0, size=logits.shape, device=logits.device)
+                    sampled_p = F.sigmoid(sampled_logits.mean(dim=-1))
 
-                    bce = loss_fn(y_pred,y)
+                    bce = loss_fn(sampled_p,y)
                     kl_div = config['optimizer']['KL_scale']*net.kl_div() / len(train_loader)
                     loss = bce + kl_div 
-                    val_acc += (torch.sum(torch.round(y_pred) == y)).item() / len(y)
+                    val_acc += (torch.sum(torch.round(sampled_p) == y)).item() / len(y)
 
                     val_loss += loss
                     val_bce += bce

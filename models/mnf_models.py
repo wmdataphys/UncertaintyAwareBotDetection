@@ -22,16 +22,17 @@ class MNFNet_v3(nn.Sequential):
         self.L3 = MNFLinear(128, 64, **kwargs)
         self.BN3 = BatchNorm1d(64)
 
-        self.classification_head = MNFLinear(64, 1, **kwargs)
-
+        self.logit_head = MNFLinear(64, 1, **kwargs)
+        self.aleatoric_head = MNFLinear(64,1 ,**kwargs)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self,x):
         x = self.act(self.BN1(self.L1(x)))
         x = self.act(self.BN2(self.L2(x)))
         x = self.act(self.BN3(self.L3(x)))
-        cls = self.sigmoid(self.classification_head(x))
-        return cls.squeeze(1)
+        logits = self.logit_head(x)
+        sigma = torch.exp(self.aleatoric_head(x)) # Log variance
+        return logits.squeeze(1),sigma.squeeze(1)
 
     def kl_div(self) -> float:
         """Compute current KL divergence of the whole model. Given by the sum

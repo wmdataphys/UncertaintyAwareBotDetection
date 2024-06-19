@@ -7,6 +7,7 @@ import argparse
 from sklearn.metrics import roc_curve, auc,roc_auc_score
 from sklearn import metrics
 from matplotlib.colors import LogNorm
+import torch
 
 def plot_auc_mlp(y_pred,y_true,out_folder):
     fpr,tpr,thresholds = roc_curve(y_true,y_pred,drop_intermediate=False)
@@ -29,14 +30,14 @@ def plot_auc_mlp(y_pred,y_true,out_folder):
     plt.close()
 
 
-def plot_auc_bayes(y_pred,sigma,y_true,out_folder,n_strap=1000):
+def plot_auc_bayes(y_pred,sigma,y_true,aleatoric,out_folder,n_strap=1000):
     # Bootstrapping AUC
     fprs = []
     tprs = []
     aucs = []
-
+    scale = np.sqrt(sigma**2 + aleatoric ** 2)
     for i in range(n_strap):
-        y_pred_temp = np.random.normal(loc=y_pred, scale=sigma)
+        y_pred_temp = np.random.normal(loc=y_pred, scale=scale)
         fpr_, tpr_, thresholds = roc_curve(y_true, y_pred_temp,drop_intermediate=False)
         fprs.append(fpr_)
         tprs.append(tpr_)
@@ -99,7 +100,8 @@ def plot_auc_bayes(y_pred,sigma,y_true,out_folder,n_strap=1000):
     plt.close()
 
 
-def validate_uncertainty(y_pred, sigma,y_true, out_folder):
+def validate_uncertainty(y_pred, sigma,y_true,aleatoric, out_folder):
+    # Epistemic uncertainty
     idx = np.argsort(y_pred)
     y_pred_sorted = y_pred[idx]
     sigma_sorted = sigma[idx]
@@ -115,7 +117,50 @@ def validate_uncertainty(y_pred, sigma,y_true, out_folder):
     plt.yticks(fontsize=18)
     plt.xlim(0,1)
     #plt.grid(True)
-    out_path_uncertainty = os.path.join(out_folder, 'uncertainty.pdf')
+    out_path_uncertainty = os.path.join(out_folder, 'epistemic_uncertainty.pdf')
+    plt.savefig(out_path_uncertainty, bbox_inches='tight')
+    plt.close()
+
+    # Aleatoric Uncertainty 
+    idx = np.argsort(y_pred)
+    y_pred_sorted = y_pred[idx]
+    sigma_sorted = aleatoric[idx]
+    plt.figure()
+    plt.hist2d(y_pred_sorted, sigma_sorted, bins=50, cmap='magma',density=True,norm=LogNorm())
+    cb = plt.colorbar(label='Log Density')
+    cb.set_label('Log Density', fontsize=25)
+    cb.ax.tick_params(labelsize=18)
+    plt.xlabel('Probability', fontsize=25)
+    plt.ylabel('Aleatoric Uncertainty', fontsize=25)
+    plt.title(r'Aleatoric Uncertainty as Function of Probability', fontsize=25, pad=20)
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.xlim(0,1)
+    plt.ylim(0,0.45)
+    #plt.grid(True)
+    out_path_uncertainty = os.path.join(out_folder, 'aleatoric_uncertainty.pdf')
+    plt.savefig(out_path_uncertainty, bbox_inches='tight')
+    plt.close()
+
+    # Quadrature Uncertainty 
+    quad = np.sqrt(sigma** 2 + aleatoric ** 2)
+    idx = np.argsort(y_pred)
+    y_pred_sorted = y_pred[idx]
+    sigma_sorted = quad[idx]
+    plt.figure()
+    plt.hist2d(y_pred_sorted, sigma_sorted, bins=50, cmap='magma',density=True,norm=LogNorm())
+    cb = plt.colorbar(label='Log Density')
+    cb.set_label('Log Density', fontsize=25)
+    cb.ax.tick_params(labelsize=18)
+    plt.xlabel('Probability', fontsize=25)
+    plt.ylabel(r'$\sigma_{epi.} \oplus \sigma_{alea.}$', fontsize=25)
+    plt.title(r'Total Uncertainty as Function of Probability', fontsize=25, pad=20)
+    plt.xticks(fontsize=18)
+    plt.yticks(fontsize=18)
+    plt.xlim(0,1)
+    plt.ylim(0,0.45)
+    #plt.grid(True)
+    out_path_uncertainty = os.path.join(out_folder, 'quadrature_uncertainty.pdf')
     plt.savefig(out_path_uncertainty, bbox_inches='tight')
     plt.close()
 
@@ -196,7 +241,7 @@ def validate_uncertainty(y_pred, sigma,y_true, out_folder):
 
 def main(config,mlp_eval):
 
-    out_dir = config['Inference']['plot_dir']
+    out_dir = config['Inference']['out_dir']
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     print("Plots can be found in " + str(out_dir))
@@ -209,9 +254,21 @@ def main(config,mlp_eval):
     predictions = results['y_hat'].to_numpy()
     sigma = results['y_hat_sigma'].to_numpy()
     y_true = results['y_true'].to_numpy()
+    aleatoric = results['aleatoric'].to_numpy()
 
-    plot_auc_bayes(predictions,sigma,y_true,out_dir)
-    validate_uncertainty(predictions,sigma,y_true,out_dir)
+    plot_auc_bayes(predictions,sigma,y_true,aleatoric,out_dir)
+    validate_uncertainty(predictions,sigma,y_true,aleatoric,out_dir)
+
+    model_dictionary = torch.load(config['Inference']['MNF_model'])
+    train_loss = model_dictionary['history']['train_loss']
+    val_loss = model_dictionary['history']['val_loss']
+
+    plt.plot(train_loss,color='red',linestyle='--',linewidth=2,label='Training Loss')
+    plt.plot(val_loss,color='blue',linestyle='--',linewidth=2,label='Validation Loss')
+    plt.xlabel("Epoch",fontsize=25)
+    plt.ylabel('Loss',fontsize=25)
+    plt.savefig(os.path.join(out_dir,'loss.pdf'),bbox_inches='tight')
+    plt.close()
 
 
     if mlp_eval:
