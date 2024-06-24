@@ -1,5 +1,5 @@
 {
-    "name": "MLP",
+    "name": "Epistemic_Aleatoric",
     "seed":8,
     "run_val": 1,
     "model": {
@@ -40,7 +40,8 @@
 	"dir": "Trained_Models"
     },
     "Inference": {
-        "MNF_model": "Trained_Models/Epistemic_Aleatoric_V1___Jun-19-2024/Epistemic_Aleatoric_V1_epoch99_val_loss_0.790281.pth",
+        "MNF_model": "Trained_Models/Epistemic_Aleatoric_V2___Jun-19-2024/Epistemic_Aleatoric_V2_epoch99_val_loss_0.794582.pth",
+        "MNF_model_GOOD": "Trained_Models/Epistemic_Aleatoric_V1___Jun-19-2024/Epistemic_Aleatoric_V1_epoch99_val_loss_0.790281.pth",
         "MNF_model_EPI":"Trained_Models/BotDetection_NewData___Jun-18-2024/BotDetection_NewData_epoch99_val_loss_0.791384.pth",
         "DNN_model": "Trained_Models/MLP___Jun-19-2024/MLP_epoch99_val_loss_0.307629.pth",
         "out_dir": "Aleatoric_Epistemic",
