@@ -8,11 +8,17 @@ from sklearn.metrics import roc_curve, auc,roc_auc_score
 from sklearn import metrics
 from matplotlib.colors import LogNorm
 import torch
+from sklearn.metrics import precision_score, recall_score, f1_score
+from sklearn.metrics import classification_report
 
 def plot_auc_mlp(y_pred,y_true,out_folder):
     fpr,tpr,thresholds = roc_curve(y_true,y_pred,drop_intermediate=False)
     auc_ = auc(fpr,tpr)
     print("DNN AUC: ",auc_)
+    report = classification_report(y_true, y_pred.round(), target_names=['Human', 'Bot'])
+    print(" ")
+    print(report)
+    print(" ")
     fig = plt.figure(figsize=(9,6))
     plt.plot(fpr,tpr,color='red', lw=2,linestyle='--', label='DNN ROC Curve. (area = %0.3f)' % auc_)
     plt.plot([0, 1], [0, 1], color='k', lw=1, linestyle='-')
@@ -56,6 +62,10 @@ def plot_auc_bayes(y_pred,sigma,y_true,aleatoric,out_folder,n_strap=1000):
     roc_auc_sigma = np.std(aucs)
 
     print("Bayes AUC: ",roc_auc," +=",roc_auc_sigma)
+    report = classification_report(y_true, y_pred.round(), target_names=['Human', 'Bot'])
+    print(" ")
+    print(report)
+    print(" ")
 
     # ROC Curve
     fig= plt.subplots(figsize=(9,6))
@@ -265,34 +275,58 @@ def plot_loss(path_,method=None,out_dir="./"):
     plt.close()
 
 
-def main(config,mlp_eval):
+def main(config,mlp_eval,method):
 
-    out_dir = config['Inference']['out_dir']
+    out_dir = config['Inference']['out_dir_'+str(method)]
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
     print("Plots can be found in " + str(out_dir))
-    if os.path.exists(os.path.join(config['Inference']['out_dir'],config['Inference']['out_file'])):
-        results = pd.read_csv(os.path.join(config['Inference']['out_dir'],config['Inference']['out_file']),sep=',',index_col=None)
+    if os.path.exists(os.path.join(config['Inference']['out_dir_'+str(method)],config['Inference']['out_file'])):
+        results_ = pd.read_csv(os.path.join(config['Inference']['out_dir_'+str(method)],config['Inference']['out_file']),sep=',',index_col=None)
     else:
         print("Please run inference first.")
         exit()
+
+    results = results_[results_.method == 'Testing']
+    bots_only = results_[results_.method == 'Bots']
 
     predictions = results['y_hat'].to_numpy()
     sigma = results['y_hat_sigma'].to_numpy()
     y_true = results['y_true'].to_numpy()
     aleatoric = results['aleatoric'].to_numpy()
+    print("# 0's (Humans): ",len(y_true[y_true == 0]))
+    print("# 1's (Bots): ",len(y_true[y_true == 1]))
+    print("Total: ",len(y_true))
 
     plot_auc_bayes(predictions,sigma,y_true,aleatoric,out_dir)
     validate_uncertainty(predictions,sigma,y_true,aleatoric,out_dir)
 
-    plot_loss(config['Inference']['MNF_model'],"BNN",out_dir=out_dir)
+    plot_loss(config['Inference']['MNF_model_'+str(method)],"BNN",out_dir=out_dir)
 
+    print("BNN performance on excess bots:")
+    predictions = bots_only['y_hat'].to_numpy()
+    sigma = bots_only['y_hat_sigma'].to_numpy()
+    y_true = bots_only['y_true'].to_numpy()
+    aleatoric = bots_only['aleatoric'].to_numpy()
+    print("# 0's (Humans): ",len(y_true[y_true == 0]))
+    print("# 1's (Bots): ",len(y_true[y_true == 1]))
+    print("Total: ",len(y_true))
+    report = classification_report(y_true, predictions.round(), target_names=['Human', 'Bot'],zero_division=0)
+    print(report)
+    print(" ")
+    print("------------------------------------------------------")
     if mlp_eval:
         y_pred_mlp = results['y_hat_mlp'].to_numpy()
         y_true_mlp = results['y_true_mlp'].to_numpy()
 
         plot_auc_mlp(y_pred_mlp,y_true_mlp,out_dir)
-        plot_loss(config['Inference']['DNN_model'],"DNN",out_dir=out_dir)
+        plot_loss(config['Inference']['DNN_model_'+str(method)],"DNN",out_dir=out_dir)
+
+        print("MLP performance on excess bots:")
+        y_pred_mlp = bots_only['y_hat_mlp'].to_numpy()
+        y_true_mlp = bots_only['y_true_mlp'].to_numpy()
+        report = classification_report(y_true_mlp, y_pred_mlp.round(), target_names=['Human', 'Bot'],zero_division=0)
+        print(report)
 
 
 if __name__=='__main__':
@@ -301,8 +335,11 @@ if __name__=='__main__':
     parser.add_argument('-c', '--config', default='config.json',type=str,
                         help='Path to the config file (default: config.json)')
     parser.add_argument('-m','--mlp_eval',default=0,type=int,help='Run MLP eval?')
+    parser.add_argument('-M', '--method', default='BLOC', type=str,
+                        help='BLOC or BOTOMETER')
+
     args = parser.parse_args()
 
     config = json.load(open(args.config))
 
-    main(config,bool(args.mlp_eval))
+    main(config,bool(args.mlp_eval),args.method)

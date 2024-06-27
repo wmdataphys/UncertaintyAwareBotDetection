@@ -20,7 +20,7 @@ import torch.nn.functional as F
 from torch.utils.data import Subset
 from dataloader.create_data import create_dataset
 
-def main(config,resume):
+def main(config,resume,method):
 
     # Setup random seed
     torch.manual_seed(config['seed'])
@@ -47,8 +47,21 @@ def main(config,resume):
 
     # Load the dataset
     print('Creating Loaders.')
-    
-    X_train,X_test,X_val,y_train,y_test,y_val = create_dataset(config['dataset']['path_to_csv'])
+    if method == "BLOC":
+        input_shape = 193 ### Hard Coded features
+        config['dataset']['path_to_csv'] = config['dataset']['BLOC']
+        print("Training on BLOC features.")
+    elif method == "BOTOMETER":
+        input_shape = 1209#### Hard Coded features
+        config['dataset']['path_to_csv'] = config['dataset']['BOTOMETER']
+        print("Training on Botometer features.")
+    else:
+        print("Incorrect method choice. Please choose from: ")
+        print("1. BLOC")
+        print("2. BOTOMETER")
+        exit()
+
+    X_train,X_test,X_val,y_train,y_test,y_val = create_dataset(config['dataset']['path_to_csv'],method=method)
     train_dataset = TensorDataset(torch.tensor(X_train),torch.tensor(y_train))
     val_dataset = TensorDataset(torch.tensor(X_val),torch.tensor(y_val))
     test_dataset = TensorDataset(torch.tensor(X_test),torch.tensor(y_test))
@@ -60,10 +73,11 @@ def main(config,resume):
     print("Validation Size: {0}".format(len(val_dataset)))
     print("Testing Size: {0}".format(len(test_dataset)))
 
-    train_loader,val_loader,test_loader = CreateLoaders(train_dataset,val_dataset,test_dataset,config)
+    train_loader,val_loader,test_loader = CreateLoaders(train_dataset,val_dataset,test_dataset,config,method=method)
 
      # Create the model
-    net = MNFNet_v3()
+    
+    net = MNFNet_v3(input_shape)
     t_params = sum(p.numel() for p in net.parameters())
     print("Network Parameters: ",t_params)
     net.to('cuda')
@@ -72,13 +86,15 @@ def main(config,resume):
 
 
     # Optimizer
-    lr = float(config['optimizer']['lr'])
-    step_size = int(config['lr_scheduler']['step_size'])
-    gamma = float(config['lr_scheduler']['gamma'])
-    optimizer = optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=lr)
-    scheduler = lr_scheduler.StepLR(optimizer, step_size=step_size, gamma=gamma)
-
     num_epochs=int(config['num_epochs'])
+    lr = float(config['optimizer']['lr'])
+    weight_decay = float(config['optimizer']['mnf_weight_decay'])
+    optimizer = optim.Adam(filter(lambda p: p.requires_grad, net.parameters()), lr=lr,weight_decay=weight_decay)
+    num_steps = len(train_loader) * num_epochs
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer=optimizer, T_max=num_steps, last_epoch=-1,
+                                                           eta_min=0)
+
+    
 
     startEpoch = 0
     global_step = 0
@@ -98,9 +114,9 @@ def main(config,resume):
 
     print('===========  Optimizer  ==================:')
     print('      LR:', lr)
-    print('      step_size:', step_size)
-    print('      gamma:', gamma)
+    print('      weight_decay:',weight_decay)
     print('      num_epochs:', num_epochs)
+    print('      KL_scale:',config['optimizer']['KL_scale'])
     print('')
 
     # Train
@@ -140,14 +156,13 @@ def main(config,resume):
 
             loss.backward()
             optimizer.step()
-
+            scheduler.step()
 
             running_loss += loss.item() * inputs.shape[0]
 
             kbar.update(i, values=[("loss", loss.item()),("bce",bce.item()),("kl_loss",kl_div.item()),("Train Accuracy",train_acc)])
             global_step += 1
 
-        scheduler.step()
         history['train_loss'].append(running_loss / len(train_loader.dataset))
         history['lr'].append(scheduler.get_last_lr()[0])
 
@@ -215,13 +230,15 @@ def main(config,resume):
 
 if __name__=='__main__':
     # PARSE THE ARGS
-    parser = argparse.ArgumentParser(description='Hackaton Training')
+    parser = argparse.ArgumentParser(description='Training')
     parser.add_argument('-c', '--config', default='config.json',type=str,
                         help='Path to the config file (default: config.json)')
     parser.add_argument('-r', '--resume', default=None, type=str,
                         help='Path to the .pth model checkpoint to resume training')
+    parser.add_argument('-M', '--method', default='BLOC', type=str,
+                        help='BLOC or BOTOMETER')
     args = parser.parse_args()
 
     config = json.load(open(args.config))
 
-    main(config,args.resume)
+    main(config,args.resume,args.method)

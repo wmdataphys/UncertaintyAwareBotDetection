@@ -2,3 +2,6 @@
 *Trained_Models*
 *data*
 .idea
+*old_results*
+*.csv*
+*.ipynb*

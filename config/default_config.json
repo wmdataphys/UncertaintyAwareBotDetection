@@ -1,14 +1,11 @@
 {
-    "name": "Epistemic_Aleatoric",
+    "name": "BOTOMETER_DNN",
     "seed":8,
     "run_val": 1,
-    "model": {
-       "blocks": [64,128,512,1024,512,128,64,3],
-       "dropout_setval": 0.0
-    },
     "dataset": {
         "root_dir" : "BR-Project",
-        "path_to_csv": "data/features-bot-shuffled.csv"
+        "BLOC": "data/features-bot-shuffled.csv",
+        "BOTOMETER": "data/features-botometer_June27_Shuffled.csv"
     },
     "lr_scheduler": {
         "step_size": 50,
@@ -16,11 +13,9 @@
     },
     "optimizer": {
         "lr": 5e-4,
-        "huber_delta":1.0,
-        "huber_scale":1.0,
-    	"log_sum_scale":1.0,
-    	"phys_scale":1.0,
-    	"KL_scale":0.0001
+        "mlp_weight_decay":0.0,
+        "mnf_weight_decay":0.0,
+        "KL_scale": 0.0001
     },
     "num_epochs":100,
     "dataloader": {
@@ -30,21 +25,23 @@
             "num_samples": 1000
     	},
         "val": {
-            "batch_size": 1024
+            "batch_size": 75
         },
         "test": {
-            "batch_size": 75
+            "batch_size_BLOC": 75,
+            "batch_size_BOTOMETER": 35
         }
     },
     "output": {
 	"dir": "Trained_Models"
     },
     "Inference": {
-        "MNF_model": "Trained_Models/Epistemic_Aleatoric_V2___Jun-19-2024/Epistemic_Aleatoric_V2_epoch99_val_loss_0.794582.pth",
-        "MNF_model_GOOD": "Trained_Models/Epistemic_Aleatoric_V1___Jun-19-2024/Epistemic_Aleatoric_V1_epoch99_val_loss_0.790281.pth",
-        "MNF_model_EPI":"Trained_Models/BotDetection_NewData___Jun-18-2024/BotDetection_NewData_epoch99_val_loss_0.791384.pth",
-        "DNN_model": "Trained_Models/MLP___Jun-19-2024/MLP_epoch99_val_loss_0.307629.pth",
-        "out_dir": "Aleatoric_Epistemic",
+        "MNF_model_BOTOMETER": "Trained_Models/BOTOMETER_BNN___Jun-27-2024/BOTOMETER_BNN_epoch15_val_loss_3.733104.pth",
+        "DNN_model_BOTOMETER": "Trained_Models/BOTOMETER_DNN___Jun-27-2024/BOTOMETER_DNN_epoch11_val_loss_0.252369.pth",
+        "MNF_model_BLOC": "Trained_Models/BLOC_BNN___Jun-27-2024/BLOC_BNN_epoch62_val_loss_0.948132.pth",
+        "DNN_model_BLOC": "Trained_Models/BLOC_DNN___Jun-27-2024/BLOC_DNN_epoch46_val_loss_0.314640.pth",
+        "out_dir_BLOC": "Aleatoric_Epistemic_BLOC",
+        "out_dir_BOTOMETER": "Aleatoric_Epistemic_BOTOMETER",
         "out_file": "Inference.csv"
     }
 }

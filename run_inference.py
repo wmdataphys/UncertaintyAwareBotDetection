@@ -16,7 +16,7 @@ from torch.optim import lr_scheduler
 import torch.nn as nn
 import pandas as pd
 from pickle import load
-from models.mnf_models import MNFNet_v3, MLP
+from models.mnf_models import MNFNet_v3, MLP,EpiOnly
 import torch.nn.functional as F
 from torch.utils.data import Subset
 from dataloader.create_data import create_dataset
@@ -49,7 +49,9 @@ def run_bayes_eval(net,test_loader,device):
 
         with torch.set_grad_enabled(False):
             logits,sigmas = net(inputs)
-    
+            #targets = net(inputs)
+
+        #targets = targets.reshape(-1,samples).detach().cpu().numpy()
         targets = F.sigmoid(logits)
         p_sigma = F.sigmoid(logits)*(1.0 - F.sigmoid(logits)) * sigmas
         targets = targets.reshape(-1,samples).detach().cpu().numpy()
@@ -106,7 +108,7 @@ def run_mlp_eval(net,test_loader,device):
     preds_frame['y_true_mlp'] = true_y
     return preds_frame
 
-def main(config,mlp_eval):
+def main(config,mlp_eval,method):
     if torch.cuda.is_available():
         device = 'cuda'
     else:
@@ -123,22 +125,36 @@ def main(config,mlp_eval):
     random.seed(config['seed'])
     torch.cuda.manual_seed(config['seed'])
 
-    # Create experiment name
-    curr_date = datetime.now()
-    exp_name = config['name'] + '___' + curr_date.strftime('%b-%d-%Y___%H:%M:%S')
-    exp_name = exp_name[:-11]
-    print(exp_name)
-
     # Create directory structure
-    output_folder = config['Inference']['out_dir']
+    output_folder = config['Inference']['out_dir_'+str(method)]
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
 
-    X_train,X_test,X_val,y_train,y_test,y_val = create_dataset(config['dataset']['path_to_csv'])
+    if method == "BLOC":
+        input_shape = 193 ### Hard Coded features
+        config['dataset']['path_to_csv'] = config['dataset']['BLOC']
+        print("Running inference on BLOC features.")
+    elif method == "BOTOMETER":
+        input_shape = 1209#### Hard Coded features
+        config['dataset']['path_to_csv'] = config['dataset']['BOTOMETER']
+        print("Running inference on Botometer features.")
+    else:
+        print("Incorrect method choice. Please choose from: ")
+        print("1. BLOC")
+        print("2. BOTOMETER")
+        exit()
+
+    X_train, X_test, X_val, y_train, y_test, y_val, X_removed_bots, y_removed_bots= create_dataset(config['dataset']['path_to_csv'],leftover_bots=True,method=method)
     train_dataset = TensorDataset(torch.tensor(X_train),torch.tensor(y_train))
     val_dataset = TensorDataset(torch.tensor(X_val),torch.tensor(y_val))
-    test_dataset = TensorDataset(torch.tensor(X_test),torch.tensor(y_test))
+    # Stack the left over bots that we did not use.
+    X_test_ = np.concatenate([X_test,X_removed_bots],axis=0)
+    y_test_ = np.concatenate([y_test,y_removed_bots])
+    subsets = np.concatenate([np.array(['Testing' for i in range(len(X_test))]),np.array(['Bots' for i in range(len(X_removed_bots))])])
+    print("Added additional bots removed from training.")
+    print(X_test_.shape,y_test_.shape)
+    test_dataset = TensorDataset(torch.tensor(X_test_),torch.tensor(y_test_))
 
     history = {'train_loss':[],'val_loss':[],'lr':[]}
     run_val = False
@@ -146,24 +162,26 @@ def main(config,mlp_eval):
     print("Validation Size: {0}".format(len(val_dataset)))
     print("Testing Size: {0}".format(len(test_dataset)))
 
-    train_loader,val_loader,test_loader = CreateLoaders(train_dataset,val_dataset,test_dataset,config)
+    train_loader,val_loader,test_loader = CreateLoaders(train_dataset,val_dataset,test_dataset,config,method=method)
     # Remove datasets/loaders we dont need
     del train_loader,val_loader,train_dataset,val_dataset
 
 
      # Load the MNF model
-    net = MNFNet_v3()
+    net = MNFNet_v3(input_shape)
+    #net = EpiOnly()
     net.to(device)
-    dict = torch.load(config['Inference']['MNF_model'])
+    dict = torch.load(config['Inference']['MNF_model_'+str(method)])
     net.load_state_dict(dict['net_state_dict'])
 
     bayes_frame = run_bayes_eval(net,test_loader,device)
     bayes_frame = bayes_frame.dropna()
+    bayes_frame['method'] = subsets
 
     if mlp_eval:
-        mlp = MLP()
+        mlp = MLP(input_shape)
         mlp.to(device)
-        dict = torch.load(config['Inference']['DNN_model'])
+        dict = torch.load(config['Inference']['DNN_model_'+str(method)])
         mlp.load_state_dict(dict['net_state_dict'])
         mlp_frame = run_mlp_eval(mlp,test_loader,device)
         mlp_frame = mlp_frame.dropna()
@@ -173,7 +191,7 @@ def main(config,mlp_eval):
         preds_frame = bayes_frame.copy()
 
     # Save it
-    save_path = os.path.join(config['Inference']['out_dir'],config['Inference']['out_file'])
+    save_path = os.path.join(config['Inference']['out_dir_'+str(method)],config['Inference']['out_file'])
     
     print("Output file: ",save_path)
     preds_frame.to_csv(save_path,sep=',',index=None)
@@ -184,8 +202,11 @@ if __name__=='__main__':
     parser.add_argument('-c', '--config', default='config.json',type=str,
                         help='Path to the config file (default: config.json)')
     parser.add_argument('-m','--mlp_eval',default=0,type=int,help='Run MLP inference?')
+    parser.add_argument('-M', '--method', default='BLOC', type=str,
+                        help='BLOC or BOTOMETER')
+
     args = parser.parse_args()
 
     config = json.load(open(args.config))
 
-    main(config,bool(args.mlp_eval))
+    main(config,bool(args.mlp_eval),args.method)
