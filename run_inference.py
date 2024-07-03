@@ -132,7 +132,7 @@ def main(config,mlp_eval,method):
         os.makedirs(output_folder)
 
     if method == "BLOC":
-        input_shape = 193 ### Hard Coded features
+        input_shape = 182 ### Hard Coded features
         config['dataset']['path_to_csv'] = config['dataset']['BLOC']
         print("Running inference on BLOC features.")
     elif method == "BOTOMETER":
@@ -145,14 +145,14 @@ def main(config,mlp_eval,method):
         print("2. BOTOMETER")
         exit()
 
-    X_train, X_test, X_val, y_train, y_test, y_val, X_removed_bots, y_removed_bots= create_dataset(config['dataset']['path_to_csv'],leftover_bots=True,method=method)
+    X_train, X_test, X_val, y_train, y_test, y_val, X_removed_accounts, y_removed_accounts, account_type= create_dataset(config['dataset']['path_to_csv'],leftover_accounts=True,method=method)
     train_dataset = TensorDataset(torch.tensor(X_train),torch.tensor(y_train))
     val_dataset = TensorDataset(torch.tensor(X_val),torch.tensor(y_val))
     # Stack the left over bots that we did not use.
-    X_test_ = np.concatenate([X_test,X_removed_bots],axis=0)
-    y_test_ = np.concatenate([y_test,y_removed_bots])
-    subsets = np.concatenate([np.array(['Testing' for i in range(len(X_test))]),np.array(['Bots' for i in range(len(X_removed_bots))])])
-    print("Added additional bots removed from training.")
+    X_test_ = np.concatenate([X_test,X_removed_accounts],axis=0)
+    y_test_ = np.concatenate([y_test,y_removed_accounts])
+    subsets = np.concatenate([np.array(['Testing' for i in range(len(X_test))]),np.array(['Excess' for i in range(len(X_removed_accounts))])])
+    print("Added additional {0} removed from training.".format(account_type))
     print(X_test_.shape,y_test_.shape)
     test_dataset = TensorDataset(torch.tensor(X_test_),torch.tensor(y_test_))
 

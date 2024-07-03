@@ -22,15 +22,17 @@ from sklearn.preprocessing import StandardScaler
 
 #     return X_train,X_test,X_val,y_train,y_test,y_val
 
-def create_dataset(file_path, train_frac=0.7, val_frac=0.5,random_seed=8,leftover_bots=False,method=None):
+def create_dataset(file_path, train_frac=0.7, val_frac=0.5,random_seed=8,leftover_accounts=False,method=None):
     if method is None:
         print("Method is none, please specify.")
         exit()
 
     print("Start to load the features")
     feature_df = pd.read_csv(file_path)
-
-    X_df = feature_df.drop(columns=['class', 'user_id'])
+    if method == "BLOC":
+        X_df = feature_df.drop(columns=['class', 'userID'])
+    else:
+        X_df = feature_df.drop(columns=['class','label','userID','src'])
     x = np.array(X_df)
     y = feature_df['class'].values
     y_binary = (y == 'bot').astype(np.float64)
@@ -50,9 +52,11 @@ def create_dataset(file_path, train_frac=0.7, val_frac=0.5,random_seed=8,leftove
     n_bots = len(bot_indices)
     np.random.seed(random_seed) # Set random seed again just incase global does not hold. It should.
     if n_bots > n_humans:
+        print("Undersampling bots.")
         bot_sample_indices = np.random.choice(bot_indices, n_humans, replace=False)
         human_sample_indices = human_indices
     else:
+        print("Undersampling humans.")
         bot_sample_indices = bot_indices
         human_sample_indices = np.random.choice(human_indices, n_bots, replace=False)
 
@@ -65,15 +69,23 @@ def create_dataset(file_path, train_frac=0.7, val_frac=0.5,random_seed=8,leftove
     X_train, X_test_val, y_train, y_test_val = tts(x_balanced, y_balanced, test_size=1.0 - train_frac, random_state=42)
     X_test, X_val, y_test, y_val = tts(X_test_val, y_test_val, test_size=val_frac, random_state=42)
 
-    removed_bot_indices = np.setdiff1d(bot_indices, bot_sample_indices)
-    X_removed_bots = x[removed_bot_indices]
-    y_removed_bots = y_binary[removed_bot_indices]
+    if n_bots > n_humans:
+        removed_account_indices = np.setdiff1d(bot_indices, bot_sample_indices)
+        X_removed_accounts = x[removed_account_indices]
+        y_removed_accounts = y_binary[removed_account_indices]
+        account_type = 'bot'
+
+    else:
+        removed_account_indices = np.setdiff1d(human_indices, human_sample_indices)
+        X_removed_accounts = x[removed_account_indices]
+        y_removed_accounts = y_binary[removed_account_indices] 
+        account_type = 'human'
 
     print("Training fraction: ", len(X_train) / len(x), len(y_train) / len(y))
     print("Validation fraction: ", len(X_val) / len(x), len(y_val) / len(y))
     print("Testing fraction: ", len(X_test) / len(x), len(y_test) / len(y))
 
-    if leftover_bots:
-        return X_train, X_test, X_val, y_train, y_test, y_val, X_removed_bots, y_removed_bots
+    if leftover_accounts:
+        return X_train, X_test, X_val, y_train, y_test, y_val, X_removed_accounts, y_removed_accounts, account_type
     else:
         return X_train,X_test,X_val,y_train,y_test,y_val

@@ -1,11 +1,11 @@
 {
-    "name": "BOTOMETER_DNN",
+    "name": "BOTOMETER_RF",
     "seed":8,
     "run_val": 1,
     "dataset": {
         "root_dir" : "BR-Project",
-        "BLOC": "data/features-bot-shuffled.csv",
-        "BOTOMETER": "data/features-botometer_June27_Shuffled.csv"
+        "BLOC": "data/BLOC_Merged_UserID.csv",
+        "BOTOMETER": "data/BOTOMETER_Merged_UserID.csv"
     },
     "lr_scheduler": {
         "step_size": 50,
@@ -36,10 +36,10 @@
 	"dir": "Trained_Models"
     },
     "Inference": {
-        "MNF_model_BOTOMETER": "Trained_Models/BOTOMETER_BNN___Jun-27-2024/BOTOMETER_BNN_epoch15_val_loss_3.733104.pth",
-        "DNN_model_BOTOMETER": "Trained_Models/BOTOMETER_DNN___Jun-27-2024/BOTOMETER_DNN_epoch11_val_loss_0.252369.pth",
-        "MNF_model_BLOC": "Trained_Models/BLOC_BNN___Jun-27-2024/BLOC_BNN_epoch62_val_loss_0.948132.pth",
-        "DNN_model_BLOC": "Trained_Models/BLOC_DNN___Jun-27-2024/BLOC_DNN_epoch46_val_loss_0.314640.pth",
+        "MNF_model_BOTOMETER": "Trained_Models/BOTOMETER_BNN___Jul-03-2024/BOTOMETER_BNN_epoch19_val_loss_2.840823.pth",
+        "DNN_model_BOTOMETER": "Trained_Models/BOTOMETER_DNN___Jul-03-2024/BOTOMETER_DNN_epoch10_val_loss_0.180610.pth",
+        "MNF_model_BLOC": "Trained_Models/BLOC_BNN___Jul-03-2024/BLOC_BNN_epoch53_val_loss_0.845877.pth",
+        "DNN_model_BLOC": "Trained_Models/BLOC_DNN___Jul-03-2024/BLOC_DNN_epoch34_val_loss_0.229418.pth",
         "out_dir_BLOC": "Aleatoric_Epistemic_BLOC",
         "out_dir_BOTOMETER": "Aleatoric_Epistemic_BOTOMETER",
         "out_file": "Inference.csv"

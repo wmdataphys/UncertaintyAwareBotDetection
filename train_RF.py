@@ -55,7 +55,7 @@ def main(config,method):
 
     print('Creating Loaders.')
     if method == "BLOC":
-        input_shape = 193 ### Hard Coded features
+        input_shape = 182 ### Hard Coded features
         config['dataset']['path_to_csv'] = config['dataset']['BLOC']
         print("Training on BLOC features.")
     elif method == "BOTOMETER":
@@ -68,7 +68,7 @@ def main(config,method):
         print("2. BOTOMETER")
         exit()
 
-    X_train, X_test, X_val, y_train, y_test, y_val, X_removed_bots, y_removed_bots= create_dataset(config['dataset']['path_to_csv'],leftover_bots=True,method=method)
+    X_train, X_test, X_val, y_train, y_test, y_val, X_removed_accounts, y_removed_accounts, account_type = create_dataset(config['dataset']['path_to_csv'],leftover_accounts=True,method=method)
 
 
     # Train Random Forest model
@@ -97,9 +97,9 @@ def main(config,method):
     print(report)
     print(" ")
 
-    print("Testing on only leftover bots..")
-    test_bots_predictions = rf_model.predict(X_removed_bots)
-    report = classification_report(y_removed_bots, test_bots_predictions, target_names=['Human', 'Bot'],zero_division=0)
+    print("Testing on only leftover {0}.".format(account_type))
+    test_account_predictions = rf_model.predict(X_removed_accounts)
+    report = classification_report(y_removed_accounts, test_account_predictions, target_names=['Human', 'Bot'],zero_division=0)
     print(report)
     print(" ")
 

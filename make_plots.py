@@ -288,7 +288,7 @@ def main(config,mlp_eval,method):
         exit()
 
     results = results_[results_.method == 'Testing']
-    bots_only = results_[results_.method == 'Bots']
+    bots_only = results_[results_.method == 'Excess']
 
     predictions = results['y_hat'].to_numpy()
     sigma = results['y_hat_sigma'].to_numpy()
@@ -303,7 +303,7 @@ def main(config,mlp_eval,method):
 
     plot_loss(config['Inference']['MNF_model_'+str(method)],"BNN",out_dir=out_dir)
 
-    print("BNN performance on excess bots:")
+    print("BNN performance on excess accounts:")
     predictions = bots_only['y_hat'].to_numpy()
     sigma = bots_only['y_hat_sigma'].to_numpy()
     y_true = bots_only['y_true'].to_numpy()
@@ -322,7 +322,7 @@ def main(config,mlp_eval,method):
         plot_auc_mlp(y_pred_mlp,y_true_mlp,out_dir)
         plot_loss(config['Inference']['DNN_model_'+str(method)],"DNN",out_dir=out_dir)
 
-        print("MLP performance on excess bots:")
+        print("MLP performance on excess accounts:")
         y_pred_mlp = bots_only['y_hat_mlp'].to_numpy()
         y_true_mlp = bots_only['y_true_mlp'].to_numpy()
         report = classification_report(y_true_mlp, y_pred_mlp.round(), target_names=['Human', 'Bot'],zero_division=0)

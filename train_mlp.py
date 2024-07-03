@@ -48,7 +48,7 @@ def main(config,resume,method):
     # Load the dataset
     print('Creating Loaders.')
     if method == "BLOC":
-        input_shape = 193 ### Hard Coded features
+        input_shape = 182 ### Hard Coded features
         config['dataset']['path_to_csv'] = config['dataset']['BLOC']
         print("Training on BLOC features.")
     elif method == "BOTOMETER":
