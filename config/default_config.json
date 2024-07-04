@@ -1,11 +1,11 @@
 {
-    "name": "BOTOMETER_RF",
+    "name": "BOTOMETER_RF_TFIDF",
     "seed":8,
     "run_val": 1,
     "dataset": {
         "root_dir" : "BR-Project",
-        "BLOC": "data/BLOC_Merged_UserID.csv",
-        "BOTOMETER": "data/BOTOMETER_Merged_UserID.csv"
+        "BLOC": "data/BLOC_Merged_UserID_TFIDF.csv",
+        "BOTOMETER": "data/BOTOMETER_Merged_UserID_TFIDF.csv"
     },
     "lr_scheduler": {
         "step_size": 50,
@@ -36,12 +36,16 @@
 	"dir": "Trained_Models"
     },
     "Inference": {
-        "MNF_model_BOTOMETER": "Trained_Models/BOTOMETER_BNN___Jul-03-2024/BOTOMETER_BNN_epoch19_val_loss_2.840823.pth",
-        "DNN_model_BOTOMETER": "Trained_Models/BOTOMETER_DNN___Jul-03-2024/BOTOMETER_DNN_epoch10_val_loss_0.180610.pth",
-        "MNF_model_BLOC": "Trained_Models/BLOC_BNN___Jul-03-2024/BLOC_BNN_epoch53_val_loss_0.845877.pth",
-        "DNN_model_BLOC": "Trained_Models/BLOC_DNN___Jul-03-2024/BLOC_DNN_epoch34_val_loss_0.229418.pth",
-        "out_dir_BLOC": "Aleatoric_Epistemic_BLOC",
-        "out_dir_BOTOMETER": "Aleatoric_Epistemic_BOTOMETER",
+        "MNF_model_BLOC": "Trained_Models/BLOC_BNN_TFIDF___Jul-03-2024/BLOC_BNN_TFIDF_epoch54_val_loss_0.835388.pth",
+        "DNN_model_BLOC": "Trained_Models/BLOC_DNN_TFIDF___Jul-03-2024/BLOC_DNN_TFIDF_epoch54_val_loss_0.219966.pth",
+        "MNF_model_BOTOMETER": "Trained_Models/BOTOMETER_BNN_TFIDF___Jul-03-2024/BOTOMETER_BNN_TFIDF_epoch19_val_loss_2.833249.pth",
+        "DNN_model_BOTOMETER": "Trained_Models/BOTOMETER_DNN_TFIDF___Jul-03-2024/BOTOMETER_DNN_TFIDF_epoch19_val_loss_0.193877.pth",
+        "MNF_model_BOTOMETER_OLD": "Trained_Models/BOTOMETER_BNN___Jul-03-2024/BOTOMETER_BNN_epoch19_val_loss_2.840823.pth",
+        "DNN_model_BOTOMETER_OLD": "Trained_Models/BOTOMETER_DNN___Jul-03-2024/BOTOMETER_DNN_epoch10_val_loss_0.180610.pth",
+        "MNF_model_BLOC_OLD": "Trained_Models/BLOC_BNN___Jul-03-2024/BLOC_BNN_epoch53_val_loss_0.845877.pth",
+        "DNN_model_BLOC_OLD": "Trained_Models/BLOC_DNN___Jul-03-2024/BLOC_DNN_epoch34_val_loss_0.229418.pth",
+        "out_dir_BLOC": "Aleatoric_Epistemic_BLOC_TFIDF",
+        "out_dir_BOTOMETER": "Aleatoric_Epistemic_BOTOMETER_TFIDF",
         "out_file": "Inference.csv"
     }
 }
