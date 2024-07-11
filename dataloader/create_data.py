@@ -33,6 +33,7 @@ def create_dataset(file_path, train_frac=0.7, val_frac=0.5,random_seed=8,leftove
         X_df = feature_df.drop(columns=['class', 'userID'])
     else:
         X_df = feature_df.drop(columns=['class','label','userID','src'])
+        
     x = np.array(X_df)
     y = feature_df['class'].values
     y_binary = (y == 'bot').astype(np.float64)

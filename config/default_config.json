@@ -36,6 +36,8 @@
 	"dir": "Trained_Models"
     },
     "Inference": {
+        "RF_model_BLOC": "Trained_Models/BLOC_RF_TFIDF___Jul-03-2024/random_forest_model.joblib",
+        "RF_model_BOTOMETER": "Trained_Models/BOTOMETER_RF_TFIDF___Jul-03-2024/random_forest_model.joblib",
         "MNF_model_BLOC": "Trained_Models/BLOC_BNN_TFIDF___Jul-03-2024/BLOC_BNN_TFIDF_epoch54_val_loss_0.835388.pth",
         "DNN_model_BLOC": "Trained_Models/BLOC_DNN_TFIDF___Jul-03-2024/BLOC_DNN_TFIDF_epoch54_val_loss_0.219966.pth",
         "MNF_model_BOTOMETER": "Trained_Models/BOTOMETER_BNN_TFIDF___Jul-03-2024/BOTOMETER_BNN_TFIDF_epoch19_val_loss_2.833249.pth",

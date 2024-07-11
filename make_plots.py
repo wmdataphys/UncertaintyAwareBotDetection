@@ -10,6 +10,8 @@ from matplotlib.colors import LogNorm
 import torch
 from sklearn.metrics import precision_score, recall_score, f1_score
 from sklearn.metrics import classification_report
+import joblib
+from dataloader.create_data import create_dataset
 
 def plot_auc_mlp(y_pred,y_true,out_folder):
     fpr,tpr,thresholds = roc_curve(y_true,y_pred,drop_intermediate=False)
@@ -35,6 +37,8 @@ def plot_auc_mlp(y_pred,y_true,out_folder):
     out_path_DLL_ROC = os.path.join(out_folder,"ROC_MLP.pdf")
     plt.savefig(out_path_DLL_ROC,bbox_inches='tight')
     plt.close()
+
+    return (fpr,tpr,auc_)
 
 
 def plot_auc_bayes(y_pred,sigma,y_true,aleatoric,out_folder,n_strap=1000):
@@ -117,6 +121,7 @@ def plot_auc_bayes(y_pred,sigma,y_true,aleatoric,out_folder,n_strap=1000):
     plt.savefig(out_path_DLL_ROC, bbox_inches='tight')
     plt.close()
 
+    return (mean_fpr,fpr_sigma,mean_tpr,tpr_sigma,roc_auc,roc_auc_sigma)
 
 def validate_uncertainty(y_pred, sigma,y_true,aleatoric, out_folder):
     # Epistemic uncertainty
@@ -275,7 +280,44 @@ def plot_loss(path_,method=None,out_dir="./"):
     plt.close()
 
 
-def main(config,mlp_eval,method):
+def load_rf_model_and_compute_roc(model_path, X_test, y_test):
+    if not os.path.exists(model_path):
+        raise FileNotFoundError(f"Model file not found at {model_path}")
+
+    rf_model = joblib.load(model_path)
+    y_pred_prob = rf_model.predict_proba(X_test)[:, 1]
+    fpr, tpr, thresholds = roc_curve(y_test, y_pred_prob, drop_intermediate=False)
+    auc_ = auc(fpr, tpr)
+
+    return (fpr, tpr, auc_)
+
+
+def plot_comparison(DNN_stats,BNN_stats,RF_stats,out_folder):
+    fpr_DNN, tpr_DNN,auc_DNN = DNN_stats
+    mean_fpr,fpr_sigma,mean_tpr,tpr_sigma,auc_BNN,auc_BNN_sigma = BNN_stats
+    fpr, tpr, auc_RF = RF_stats
+
+    fig= plt.subplots(figsize=(9,6))
+
+    plt.plot(mean_fpr, mean_tpr, color='k', lw=1,linestyle='--' ,label=r'BNN ROC curve (area = {0:.3f} $\pm$ {1:.3f})'.format(auc_BNN,auc_BNN_sigma))
+    plt.fill_between(mean_fpr, mean_tpr - 5 * tpr_sigma, mean_tpr + 5 * tpr_sigma, color='grey', alpha=0.5, label=r'$5\sigma$ Band')
+    plt.fill_betweenx(mean_tpr, mean_fpr - 5 * fpr_sigma, mean_fpr + 5 * fpr_sigma, color='grey', alpha=0.5, label=None)
+    plt.plot(fpr_DNN,tpr_DNN,color='red',lw=1,linestyle='--',label=r'DNN ROC curve (area = {0:.3f})'.format(auc_DNN))
+    plt.plot(fpr,tpr,color='blue',lw=1,linestyle='--',label=r'RF ROC curve (area = {0:.3f})'.format(auc_RF))
+    plt.plot([0, 1], [0, 1], color='grey', lw=1, linestyle='--')
+    plt.xlim([0.0, 1.0])
+    plt.ylim([0.0, 1.05])
+    plt.xlabel('False Positive Rate', fontsize=25)
+    plt.ylabel('True Positive Rate', fontsize=25)
+    plt.legend(loc="lower right", fontsize=16)
+    plt.tick_params(axis='both', which='major', labelsize=18)
+    plt.tick_params(axis='both', which='minor', labelsize=16)
+    plt.grid(True)
+    out_path_DLL_ROC = os.path.join(out_folder, "ROC_Overlayed.pdf")
+    plt.savefig(out_path_DLL_ROC, bbox_inches='tight')
+    plt.close()
+
+def main(config,mlp_eval,method,comparison):
 
     out_dir = config['Inference']['out_dir_'+str(method)]
     if not os.path.exists(out_dir):
@@ -298,7 +340,7 @@ def main(config,mlp_eval,method):
     print("# 1's (Bots): ",len(y_true[y_true == 1]))
     print("Total: ",len(y_true))
 
-    plot_auc_bayes(predictions,sigma,y_true,aleatoric,out_dir)
+    BNN_stats = plot_auc_bayes(predictions,sigma,y_true,aleatoric,out_dir)
     validate_uncertainty(predictions,sigma,y_true,aleatoric,out_dir)
 
     plot_loss(config['Inference']['MNF_model_'+str(method)],"BNN",out_dir=out_dir)
@@ -319,7 +361,7 @@ def main(config,mlp_eval,method):
         y_pred_mlp = results['y_hat_mlp'].to_numpy()
         y_true_mlp = results['y_true_mlp'].to_numpy()
 
-        plot_auc_mlp(y_pred_mlp,y_true_mlp,out_dir)
+        DNN_stats = plot_auc_mlp(y_pred_mlp,y_true_mlp,out_dir)
         plot_loss(config['Inference']['DNN_model_'+str(method)],"DNN",out_dir=out_dir)
 
         print("MLP performance on excess accounts:")
@@ -328,6 +370,30 @@ def main(config,mlp_eval,method):
         report = classification_report(y_true_mlp, y_pred_mlp.round(), target_names=['Human', 'Bot'],zero_division=0)
         print(report)
 
+    if comparison and mlp_eval:
+        if method == "BLOC":
+            input_shape = 182 ### Hard Coded features
+            config['dataset']['path_to_csv'] = config['dataset']['BLOC']
+        elif method == "BOTOMETER":
+            input_shape = 1209#### Hard Coded features
+            config['dataset']['path_to_csv'] = config['dataset']['BOTOMETER']
+        else:
+            print("Incorrect method choice. Please choose from: ")
+            print("1. BLOC")
+            print("2. BOTOMETER")
+            exit()
+
+        print("comparison is True, mlp_eval is True.")
+        print("Overlaying BNN, DNN, and RF.")
+        X_train, X_test, X_val, y_train, y_test, y_val, X_removed_accounts, y_removed_accounts, account_type = create_dataset(config['dataset']['path_to_csv'],leftover_accounts=True,method=method)
+        RF_stats = load_rf_model_and_compute_roc(config['Inference']['RF_model_'+str(method)],X_test,y_test)
+        plot_comparison(DNN_stats,BNN_stats,RF_stats,out_dir)
+
+    if comparison and not mlp_eval:
+        print("Please set mlp_eval = 1 to run full comparison.")
+        exit()
+
+
 
 if __name__=='__main__':
     # PARSE THE ARGS
@@ -335,6 +401,7 @@ if __name__=='__main__':
     parser.add_argument('-c', '--config', default='config.json',type=str,
                         help='Path to the config file (default: config.json)')
     parser.add_argument('-m','--mlp_eval',default=0,type=int,help='Run MLP eval?')
+    parser.add_argument('-r','--comparison',default=0,type=int,help='Compare RF,DNN,BNN?')
     parser.add_argument('-M', '--method', default='BLOC', type=str,
                         help='BLOC or BOTOMETER')
 
@@ -342,4 +409,4 @@ if __name__=='__main__':
 
     config = json.load(open(args.config))
 
-    main(config,bool(args.mlp_eval),args.method)
+    main(config,bool(args.mlp_eval),args.method,args.comparison)
