@@ -292,7 +292,14 @@ def load_rf_model_and_compute_roc(model_path, X_test, y_test):
     return (fpr, tpr, auc_)
 
 
-def plot_comparison(DNN_stats,BNN_stats,RF_stats,out_folder):
+def plot_comparison(DNN_stats,BNN_stats,RF_stats,out_folder,method=None):
+    if method == "BLOC":
+        title = 'Bloc'
+    elif method == "BOTOMETER":
+        title = 'Botometer'
+    else:
+        title = None
+
     fpr_DNN, tpr_DNN,auc_DNN = DNN_stats
     mean_fpr,fpr_sigma,mean_tpr,tpr_sigma,auc_BNN,auc_BNN_sigma = BNN_stats
     fpr, tpr, auc_RF = RF_stats
@@ -309,6 +316,7 @@ def plot_comparison(DNN_stats,BNN_stats,RF_stats,out_folder):
     plt.ylim([0.0, 1.05])
     plt.xlabel('False Positive Rate', fontsize=25)
     plt.ylabel('True Positive Rate', fontsize=25)
+    plt.title(title,fontsize='30')
     plt.legend(loc="lower right", fontsize=16)
     plt.tick_params(axis='both', which='major', labelsize=18)
     plt.tick_params(axis='both', which='minor', labelsize=16)
@@ -387,7 +395,7 @@ def main(config,mlp_eval,method,comparison):
         print("Overlaying BNN, DNN, and RF.")
         X_train, X_test, X_val, y_train, y_test, y_val, X_removed_accounts, y_removed_accounts, account_type = create_dataset(config['dataset']['path_to_csv'],leftover_accounts=True,method=method)
         RF_stats = load_rf_model_and_compute_roc(config['Inference']['RF_model_'+str(method)],X_test,y_test)
-        plot_comparison(DNN_stats,BNN_stats,RF_stats,out_dir)
+        plot_comparison(DNN_stats,BNN_stats,RF_stats,out_dir,method=method)
 
     if comparison and not mlp_eval:
         print("Please set mlp_eval = 1 to run full comparison.")
