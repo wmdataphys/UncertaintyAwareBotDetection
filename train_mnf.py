@@ -77,7 +77,7 @@ def main(config,resume,method):
 
      # Create the model
     
-    net = EpiOnly(input_shape)
+    net = MNFNet_v3(input_shape)
     t_params = sum(p.numel() for p in net.parameters())
     print("Network Parameters: ",t_params)
     net.to('cuda')
