@@ -9,9 +9,8 @@ In this paper, we investigate Bayesian deep learning  for classifying bot accoun
 
 # Contents
 - [Requirements](#Section-1)
-- [Dataset Access](#Section-2)
-- [Architecture](#Section-3)
-- [Usage](#Section-4)
+- [Architecture](#Section-2)
+- [Usage](#Section-3)
     
 
 # Requirements
@@ -31,11 +30,6 @@ In the case that some packages do not install through the provided conda command
 `$ python3 -m pip install <package>`
 
 Note that we have already included the [Multiplicative Normalizing Flows](https://github.com/janosh/torch-mnf) within the models folder. For more information regarding this package please follow the provided links. 
-
-
-# Dataset Access
-
-The datasets used can be found [here]{https://drive.google.com/drive/folders/1q6TcZOz2llJvFhufrG0xxFRF-HacgdHy?usp=sharing}. 
 
 
 # Uncertainty Aware Bot Detection
