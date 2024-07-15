@@ -1,42 +1,100 @@
-# Twitter Bot classification with Bayesian Neural Network using the BLOC framework
+# [Unmasking Social Bots: How Confident Are We?](https://arxiv.org/abs/2407.07376)
 
-We utilize two models, both of which are under development.
+# Abstract 
 
-1. A Bayesian Neural Network with Flow approximated posteriors.
-2. A simple Deep Neural Network.
+With the advent of the internet and social media platforms alike, the world has never been in a more connected state. Platforms such as Twitter/X, allow users to share information in real-time. This information, whether mundane day-to-day events, or crucial information regarding natural disasters spreads at a rapid rate. As such, both individuals and organizations with ill intentions have devised methods of spreading misinformation at alarming rates. These attacks generally take the form of Bot Accounts in which automated programs are able to control a large phase space of the social sphere. 
+In this paper, we investigate Bayesian deep learning  for classifying bot accounts, showing that our network remains agnostic to the type of input. Our architecture includes uncertainty quantification, offering a more refined approach to decision-making. This capability allows us to assess the confidence of each prediction, thereby enhancing the reliability of our bot detection process. 
 
-We want to compare these two.
+![alt text](Figures/intro_figure.png)
 
-To train the bayesian network you can run:
+# Contents
+- [Requirements](#Section-1)
+- [Dataset Access](#Section-2)
+- [Architecture](#Section-3)
+- [Usage](#Section-4)
+    
 
-python train_mnf.py --config config/default_config.json
+# Requirements
 
-To train the DNN you can run:
-
-python train_mlp.py --config config/default_config.json
-
-In both cases, make sure you update the experiment name (first field of json file) as a directory will be created with this name all models will be saved here.
-
-By default, the evaluation scripts (run_inference.py, make_plots.py) will evaluate the Bayesian network. You can add a command line flag to also evaluate the the MLP.
-
-For example:
-
-python run_inference.py --config config/default_config.json --mlp_eval 1
-
-This will run the MLP evaluation. Make sure that you have specified paths to the DNN and Bayesian Network under the Inference field in the config.json file.
-You can also run the plotting code in a similar fashion (assuming you have ran inference with --mlp_eval 1).
-
-For example:
-
-python make_plots.py --config config/default_config.json --mlp_eval 1
-
-This will create plots for both the Bayesian network and the MLP. You can control the folder where these are generated in the config file. Also make sure you specify the path to the out_file in the .json files for inference.
+- Python:     3.9.12
+- Pytorch:    1.12.1
+- CUDA:       11.3
+- [Multiplicative Normalizing Flows](https://github.com/janosh/torch-mnf)
 
 
+The dependencies for the networks can be installed with the following command:
 
-### Related Publications 
-- BLOC: https://epjdatascience.springeropen.com/articles/10.1140/epjds/s13688-023-00410-9
+`$ conda env create -f requirements.yml`
 
-- ELUQuant: https://iopscience.iop.org/article/10.1088/2632-2153/ad2098/meta
+In the case that some packages do not install through the provided conda command, you can install them using pip once your conda environment is activated:
 
-- https://arxiv.org/pdf/1703.04977
+`$ python3 -m pip install <package>`
+
+Note that we have already included the [Multiplicative Normalizing Flows](https://github.com/janosh/torch-mnf) within the models folder. For more information regarding this package please follow the provided links. 
+
+
+# Dataset Access
+
+The datasets used can be found [here]{https://drive.google.com/drive/folders/1q6TcZOz2llJvFhufrG0xxFRF-HacgdHy?usp=sharing}. 
+
+
+# Uncertainty Aware Bot Detection
+
+The Bayesian Neural Network (BNN) is characterized by [Multiplicative Normalizing Flows](https://github.com/janosh/torch-mnf) layers, SELU activation functions and batch norm. The output of the model at inference will be the prediction probability, the epistemic uncertainty and the aleatoric uncertainty. We provide code for the three models used in the paper, BNN, Deep Nerual Network (DNN) and a Random Forest (RF). The DNN and BNN inherit the same structure.
+
+![alt text](Figures/Analysis_Pipeline.png)
+
+
+
+# Usage 
+
+## Training 
+
+Training is configuration file based for all three methods. You will need to create a directory to house the trained models, and update the __default_config.json__ file to reflect this. You will also need to updated where the data files are located. Most hyperparameters can be changed by modifying the fields in this file. The provided config file can be used to train all three models on both datasets, requiring only modification of the __name__ field. We recommend a naming convention such as:
+    
+`BNN_BLOC , BNN_BOTOMETER, DNN_BLOC, ...,  etc. `
+    
+You can specify the dataset you wish to train on (Bloc, or Botometer) using the --method field.
+    
+To train the BNN on Bloc features you can run the following command:
+    
+`$ python train_mnf.py --config config/default_config.json --method "BLOC"`
+
+To train the BNN on Botometer features you can run the following command:
+    
+`$ python train_mnf.py --config config/default_config.json --method "BOTOMETER"`
+
+This will create a folder within the "output/dir" folder of the config file that will be named based on the "name" field of the config file. The weights at each epoch will be saved here for later use.
+    
+The DNN and RF can be trained using similar commands. For example:
+    
+`$ python train_mlp.py --config config/default_config.json --method "BLOC"` 
+
+`$ python train_RF.py --config config/default_config.json --method "BLOC"`
+
+## Testing
+
+Evaluation of the model will be broken into two steps.
+    
+1. Production of Inference.csv file.
+2. Plotting.
+    
+Once you have models trained, you will need to provide the relative path to the desired epoch for the three models under the __Inference__ field of the config file. You can then run inference using the BNN using the following command:
+    
+`$ python run_inference.py --config config/default_config.json --mlp_eval 1 --method "BLOC"`
+
+The --mlp_eval arguement controls whether or not we want to evaluate the DNN. By default this is set to 0 (False). The --method field will control which model/dataset will be used.
+
+This will create a folder named according to the __out_dir_BLOC__ or __out_dir_BOTOMETER__ field depending on which method is specified and place the resulting .csv file within.
+
+You can then run plotting and performance analysis with the following command:
+
+`$ python run_inference.py --config config/default_config.json --mlp_eval 1 --method "BLOC" --comparison 0 `
+    
+This will produce plots and performance metrics for the BNN and DNN. If you have trained an RF model, you can also include set --comparison 1 to produce the full comparison plots of all three models. The output figures will be placed in the same folder as the Inference.csv file.  
+    
+Note that the performance of the RF will be produced when you run its training script.
+
+## Additional Plots / Uncertainty Aware Decision Making
+    
+Additional plots (such as t-SNE) can be created using the __extras.ipynb__ notebook, along with example code for uncertainty aware decision making in which accounts are held for classification based on $|P_{pred} - 0.5| > 3\sigma(P_{pred}).$ 
