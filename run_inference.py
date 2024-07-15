@@ -146,12 +146,6 @@ def main(config,mlp_eval,method):
         exit()
 
     X_train, X_test, X_val, y_train, y_test, y_val, X_removed_accounts, y_removed_accounts, account_type= create_dataset(config['dataset']['path_to_csv'],leftover_accounts=True,method=method)
-    userID_train = y_train[:,1]
-    y_train = y_train[:,0]
-    userID_test = y_test[:,1]
-    y_test = y_test[:,0]
-    userID_val = y_val[:,1]
-    y_val = y_val[:,0]
     
     train_dataset = TensorDataset(torch.tensor(X_train),torch.tensor(y_train))
     val_dataset = TensorDataset(torch.tensor(X_val),torch.tensor(y_val))
@@ -175,9 +169,9 @@ def main(config,mlp_eval,method):
     del train_loader,val_loader,train_dataset,val_dataset
 
 
-     # Load the MNF model
+    # Load the MNF model
     net = MNFNet_v3(input_shape)
-    #net = EpiOnly()
+    #net = EpiOnly(input_shape)
     net.to(device)
     dict = torch.load(config['Inference']['MNF_model_'+str(method)])
     net.load_state_dict(dict['net_state_dict'])

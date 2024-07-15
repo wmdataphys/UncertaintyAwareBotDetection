@@ -7,20 +7,22 @@ from models.torch_mnf.layers import MNFLinear
 
 class EpiOnly(nn.Sequential):
     """Bayesian DNN with parameter posteriors modeled by normalizing flows."""
-    def __init__(self, **kwargs: Any) -> None:
+    def __init__(self, input_shape,**kwargs: Any) -> None:
         """Initialize the model."""
         super(EpiOnly,self).__init__()
 
         self.act = nn.SELU()
 
-        self.L1 = MNFLinear(133, 256,**kwargs)
-        self.L1 = MNFLinear(193, 256,**kwargs)
+
+        self.L1 = MNFLinear(input_shape, 256,**kwargs)
         self.BN1 = BatchNorm1d(256)
 
         self.L2 = MNFLinear(256, 128, **kwargs)
         self.BN2 = BatchNorm1d(128)
+
         self.L3 = MNFLinear(128, 64, **kwargs)
         self.BN3 = BatchNorm1d(64)
+        
         self.classification_head = MNFLinear(64, 1, **kwargs)
         self.sigmoid = nn.Sigmoid()
 

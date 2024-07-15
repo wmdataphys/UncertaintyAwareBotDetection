@@ -15,7 +15,7 @@ from torch.optim import lr_scheduler
 import torch.nn as nn
 import pandas as pd
 from pickle import load
-from models.mnf_models import MNFNet_v3
+from models.mnf_models import MNFNet_v3,EpiOnly
 import torch.nn.functional as F
 from torch.utils.data import Subset
 from dataloader.create_data import create_dataset
@@ -77,7 +77,7 @@ def main(config,resume,method):
 
      # Create the model
     
-    net = MNFNet_v3(input_shape)
+    net = EpiOnly(input_shape)
     t_params = sum(p.numel() for p in net.parameters())
     print("Network Parameters: ",t_params)
     net.to('cuda')
@@ -142,6 +142,7 @@ def main(config,resume,method):
             optimizer.zero_grad()
 
             with torch.set_grad_enabled(True):
+                #sampled_p = net(inputs)
                 logits,sigma = net(inputs)
                 logits = logits.unsqueeze(-1).expand(*logits.shape,num_samples)
                 sigma = sigma.unsqueeze(-1).expand(*sigma.shape,num_samples)
@@ -180,6 +181,7 @@ def main(config,resume,method):
                 for i, data in enumerate(val_loader):
                     inputs  = data[0].to('cuda').float()
                     y  = data[1].to('cuda').float()
+                    #sampled_p = net(inputs)
                     logits,sigma = net(inputs)
                     logits = logits.unsqueeze(-1).expand(*logits.shape,num_samples)
                     sigma = sigma.unsqueeze(-1).expand(*sigma.shape,num_samples)
