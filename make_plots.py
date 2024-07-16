@@ -129,7 +129,7 @@ def validate_uncertainty(y_pred, sigma,y_true,aleatoric, out_folder):
     y_pred_sorted = y_pred[idx]
     sigma_sorted = sigma[idx]
     plt.figure()
-    plt.hist2d(y_pred_sorted, sigma_sorted, bins=50, cmap='magma',density=True,norm=LogNorm())
+    plt.hist2d(y_pred_sorted, sigma_sorted, bins=50, cmap='magma',density=True,norm=LogNorm(),range=[[0,1],[0,0.45]])
     cb = plt.colorbar(label='Log Density')
     cb.set_label('Log Density', fontsize=25)
     cb.ax.tick_params(labelsize=18)
@@ -150,7 +150,7 @@ def validate_uncertainty(y_pred, sigma,y_true,aleatoric, out_folder):
     y_pred_sorted = y_pred[idx]
     sigma_sorted = aleatoric[idx]
     plt.figure()
-    plt.hist2d(y_pred_sorted, sigma_sorted, bins=50, cmap='magma',density=True,norm=LogNorm())
+    plt.hist2d(y_pred_sorted, sigma_sorted, bins=50, cmap='magma',density=True,norm=LogNorm(),range=[[0,1],[0,0.45]])
     cb = plt.colorbar(label='Log Density')
     cb.set_label('Log Density', fontsize=25)
     cb.ax.tick_params(labelsize=18)
@@ -172,7 +172,7 @@ def validate_uncertainty(y_pred, sigma,y_true,aleatoric, out_folder):
     y_pred_sorted = y_pred[idx]
     sigma_sorted = quad[idx]
     plt.figure()
-    plt.hist2d(y_pred_sorted, sigma_sorted, bins=50, cmap='magma',density=True,norm=LogNorm())
+    plt.hist2d(y_pred_sorted, sigma_sorted, bins=50, cmap='magma',density=True,norm=LogNorm(),range=[[0,1],[0,0.45]])
     cb = plt.colorbar(label='Log Density')
     cb.set_label('Log Density', fontsize=25)
     cb.ax.tick_params(labelsize=18)

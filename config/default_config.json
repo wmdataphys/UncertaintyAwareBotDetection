@@ -46,7 +46,7 @@
         "DNN_model_BOTOMETER_OLD": "Trained_Models/BOTOMETER_DNN___Jul-03-2024/BOTOMETER_DNN_epoch10_val_loss_0.180610.pth",
         "MNF_model_BLOC_OLD": "Trained_Models/BLOC_BNN___Jul-03-2024/BLOC_BNN_epoch53_val_loss_0.845877.pth",
         "DNN_model_BLOC_OLD": "Trained_Models/BLOC_DNN___Jul-03-2024/BLOC_DNN_epoch34_val_loss_0.229418.pth",
-        "out_dir_BLOC": "Epistemic_BLOC_TFIDF",
+        "out_dir_BLOC": "Aleatoric_Epistemic_BLOC_TFIDF",
         "out_dir_BOTOMETER": "Aleatoric_Epistemic_BOTOMETER_TFIDF",
         "out_file": "Inference.csv"
     }

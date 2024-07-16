@@ -1,4 +1,4 @@
-# [Unmasking Social Bots: How Confident Are We?](https://arxiv.org/abs/2407.07376)
+# Unmasking Social Bots: How Confident Are We?
 
 # Abstract 
 
