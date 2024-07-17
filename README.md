@@ -92,3 +92,42 @@ Note that the performance of the RF will be produced when you run its training s
 ## Additional Plots / Uncertainty Aware Decision Making
     
 Additional plots (such as t-SNE) can be created using the __extras.ipynb__ notebook, along with example code for uncertainty aware decision making in which accounts are held for classification based on $|P_{pred} - 0.5| > 3\sigma(P_{pred}).$ 
+
+## BLOC Feature Generation
+
+### Install BLOC
+
+Option 1:
+```bash
+    $ pip install twitterbloc
+```
+    
+Option 2 (for most recent update):
+```bash
+    $ git clone https://github.com/anwala/bloc.git
+    $ cd bloc/; pip install .; cd ..; rm -rf bloc;
+```
+    
+Option 3 (Install inside Docker container):
+```bash
+    $ docker run -it --rm --name BLOC -v "$PWD":/usr/src/myapp -w /usr/src/myapp python:3.7-stretch bash
+    $ git clone https://github.com/anwala/bloc.git
+    $ cd bloc/; pip install .; cd ..; rm -rf bloc;
+```
+
+### Feature Generation
+
+Execute the python script: [bloc_processor.py](BlocProcessing/bloc_processor.py) as follows to generate BLOC features for twitter accounts.
+
+```
+
+-d --dataset_path       Path to the dataset directory, required=True
+-t --tf_idf_output      Output path for the json.gz file to strore the tf-idf matrix, ex:- tf_idf_mat.json.gz, required=True
+-f --features_output    Output path for the csv file to save the BLOC features, ex:- features-bloc.csv, required=True
+```
+
+By executing the following command, BLOC features can be generated for the twitter accounts. 
+
+```
+python bloc_processor.py -d dataset_path -t tf_idf_mat.json.gz -f features-bloc.csv
+```
