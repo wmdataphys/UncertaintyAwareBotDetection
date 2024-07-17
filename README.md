@@ -11,6 +11,7 @@ In this paper, we investigate Bayesian deep learning  for classifying bot accoun
 - [Requirements](#Section-1)
 - [Architecture](#Section-2)
 - [Usage](#Section-3)
+- [BLOC Feature Generation](#Section-4)
     
 
 # Requirements
@@ -19,7 +20,7 @@ In this paper, we investigate Bayesian deep learning  for classifying bot accoun
 - Pytorch:    1.12.1
 - CUDA:       11.3
 - [Multiplicative Normalizing Flows](https://github.com/janosh/torch-mnf)
-
+- [BLOC](https://github.com/anwala/bloc)
 
 The dependencies for the networks can be installed with the following command:
 
@@ -31,6 +32,7 @@ In the case that some packages do not install through the provided conda command
 
 Note that we have already included the [Multiplicative Normalizing Flows](https://github.com/janosh/torch-mnf) within the models folder. For more information regarding this package please follow the provided links. 
 
+More information regarding the [BLOC](https://github.com/anwala/bloc) dependency can be found in the __BLOC Feature Generation__ section.
 
 # Uncertainty Aware Bot Detection
 
