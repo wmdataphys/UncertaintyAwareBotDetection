@@ -117,17 +117,16 @@ Option 3 (Install inside Docker container):
 
 ### Feature Generation
 
-Execute the python script: [bloc_processor.py](BlocProcessing/bloc_processor.py) as follows to generate BLOC features.
+Execute the python script: [bloc_processor.py](BlocProcessing/bloc_processor.py) as follows to generate BLOC features for twitter accounts.
 
 ```
--f --input-file         Input CSV file containing IMDb URIs, required=True
--o --output-folder      Output folder to store director credits, required=True
 
 -d --dataset_path       Path to the dataset directory, required=True
 -t --tf_idf_output      Output path for the json.gz file to strore the tf-idf matrix, ex:- tf_idf_mat.json.gz, required=True
 -f --features_output    Output path for the csv file to save the BLOC features, ex:- features-bloc.csv, required=True
 ```
-- By executing the following command, BLOC features can be generated for the twitter accounts. 
+
+By executing the following command, BLOC features can be generated for the twitter accounts. 
 
 ```
 python bloc_processor.py -d dataset_path -t tf_idf_mat.json.gz -f features-bloc.csv
