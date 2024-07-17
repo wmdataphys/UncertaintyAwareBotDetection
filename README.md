@@ -97,24 +97,23 @@ Additional plots (such as t-SNE) can be created using the __extras.ipynb__ noteb
 
 ### Install BLOC
 
-    ```bash
+Option 1:
+```bash
     $ pip install twitterbloc
-    ```
+```
     
-    Option 2 (for most recent update):
-    
-    ```bash
+Option 2 (for most recent update):
+```bash
     $ git clone https://github.com/anwala/bloc.git
     $ cd bloc/; pip install .; cd ..; rm -rf bloc;
-    ```
+```
     
-    Option 3 (Install inside Docker container): 
-    
-    ```bash
+Option 3 (Install inside Docker container):
+```bash
     $ docker run -it --rm --name BLOC -v "$PWD":/usr/src/myapp -w /usr/src/myapp python:3.7-stretch bash
     $ git clone https://github.com/anwala/bloc.git
     $ cd bloc/; pip install .; cd ..; rm -rf bloc;
-    ```
+```
 
 ### Feature Generation
 
