@@ -1,12 +1,25 @@
 import json
 import csv
 import gzip
+import sys
+import argparse
 from bloc.generator import add_bloc_sequences
 from bloc.util import conv_tf_matrix_to_json_compliant
 from bloc.util import get_bloc_variant_tf_matrix
 from bloc.util import get_default_symbols
 from bloc.util import getDictFromJson
 from bloc.util import get_bloc_params
+
+# Set up command line arguments
+parser = argparse.ArgumentParser(description='Process bot dataset files.')
+parser.add_argument('-d', '--dataset_path', required=True, help='Path to the dataset directory')
+parser.add_argument('-t', '--tf_idf_output', required=True, help='Output path for tf_idf_mat.json.gz')
+parser.add_argument('-f', '--features_output', required=True, help='Output path for features-bloc.csv')
+args = parser.parse_args()
+
+dataset_path = args.dataset_path
+tf_idf_output = args.tf_idf_output
+features_output = args.features_output
 
 bot_dataset_files = [
     {'src': 'astroturf', 'classes': ['political_Bot']},
@@ -25,7 +38,6 @@ bot_dataset_files = [
     {'src': 'verified', 'classes': ['human']}
 ]
 
-
 # Read UserId.txt file, and add it to a map
 def get_user_id_class_map(file_path):
     user_id_class_map = {}
@@ -41,7 +53,6 @@ def get_user_id_class_map(file_path):
 
     return user_id_class_map, all_classes
 
-
 # Return each twitter account into a bloc doc
 def get_bloc_doc(u_bloc, bloc_model, user_id_class):
     doc = [u_bloc['bloc'][dim] for dim in bloc_model['bloc_alphabets'] if dim in u_bloc['bloc']]
@@ -54,7 +65,6 @@ def get_bloc_doc(u_bloc, bloc_model, user_id_class):
         'src': 'IU',
         'class': user_id_class
     }
-
 
 all_bloc_symbols = get_default_symbols()
 gen_bloc_params, gen_bloc_args = get_bloc_params([], '', sort_action_words=True,
@@ -73,10 +83,9 @@ bloc_model = {
 }
 
 bloc_doc_lst = []
-dataset_path = 'retraining_data'
 for file in bot_dataset_files:
-    tweets_file_path = dataset_path + file['src'] + '/tweets.jsons.gz'
-    userid_file_path = dataset_path + file['src'] + '/userIds.txt'
+    tweets_file_path = f"{dataset_path}/{file['src']}/tweets.jsons.gz"
+    userid_file_path = f"{dataset_path}/{file['src']}/userIds.txt"
     user_id_class_map, all_classes = get_user_id_class_map(userid_file_path)
     with gzip.open(tweets_file_path, 'rt', encoding='windows-1252') as infile:
         print(f"Processing Twitter file: {tweets_file_path}")
@@ -106,12 +115,10 @@ tf_matrix = get_bloc_variant_tf_matrix(bloc_doc_lst,
                                        set_top_ngrams=bloc_model.get('set_top_ngrams', False),
                                        top_ngrams_add_all_docs=bloc_model.get('top_ngrams_add_all_docs', False))
 
-with gzip.open('tf_idf_mat.json.gz', 'wt', encoding='utf-8') as json_gz_file:
+with gzip.open(tf_idf_output, 'wt', encoding='utf-8') as json_gz_file:
     json.dump(conv_tf_matrix_to_json_compliant(tf_matrix), json_gz_file, indent=2)
 
-csv_file_path = 'features-bloc.csv'
-
-with open(csv_file_path, 'w', newline='') as csv_file:
+with open(features_output, 'w', newline='') as csv_file:
     writer = csv.writer(csv_file)
 
     header = ['user_id', 'class'] + [f'{i}' for i in tf_matrix['vocab']]
