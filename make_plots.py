@@ -294,7 +294,7 @@ def load_rf_model_and_compute_roc(model_path, X_test, y_test):
 
 def plot_comparison(DNN_stats,BNN_stats,RF_stats,out_folder,method=None):
     if method == "BLOC":
-        title = 'Bloc'
+        title = 'BLOC'
     elif method == "BOTOMETER":
         title = 'Botometer'
     else:
