@@ -54,19 +54,26 @@ You can specify the dataset you wish to train on (Bloc, or Botometer) using the 
     
 To train the BNN on Bloc features you can run the following command:
     
-`$ python train_mnf.py --config config/default_config.json --method "BLOC"`
+```$ python train_mnf.py --config config/default_config.json --method "BLOC"
+```
 
 To train the BNN on Botometer features you can run the following command:
     
-`$ python train_mnf.py --config config/default_config.json --method "BOTOMETER"`
+```
+$ python train_mnf.py --config config/default_config.json --method "BOTOMETER"
+```
 
 This will create a folder within the "output/dir" folder of the config file that will be named based on the "name" field of the config file. The weights at each epoch will be saved here for later use.
     
 The DNN and RF can be trained using similar commands. For example:
     
-`$ python train_mlp.py --config config/default_config.json --method "BLOC"` 
+```
+$ python train_mlp.py --config config/default_config.json --method "BLOC"
+```` 
 
-`$ python train_RF.py --config config/default_config.json --method "BLOC"`
+```
+$ python train_RF.py --config config/default_config.json --method "BLOC"
+```
 
 ## Testing
 
@@ -77,7 +84,9 @@ Evaluation of the model will be broken into two steps.
     
 Once you have models trained, you will need to provide the relative path to the desired epoch for the three models under the __Inference__ field of the config file. You can then run inference using the BNN using the following command:
     
-`$ python run_inference.py --config config/default_config.json --mlp_eval 1 --method "BLOC"`
+```
+$ python run_inference.py --config config/default_config.json --mlp_eval 1 --method "BLOC"
+```
 
 The --mlp_eval arguement controls whether or not we want to evaluate the DNN. By default this is set to 0 (False). The --method field will control which model/dataset will be used.
 
@@ -85,7 +94,9 @@ This will create a folder named according to the __out_dir_BLOC__ or __out_dir_B
 
 You can then run plotting and performance analysis with the following command:
 
-`$ python run_inference.py --config config/default_config.json --mlp_eval 1 --method "BLOC" --comparison 0 `
+```
+$ python run_inference.py --config config/default_config.json --mlp_eval 1 --method "BLOC" --comparison 0
+```
     
 This will produce plots and performance metrics for the BNN and DNN. If you have trained an RF model, you can also include set --comparison 1 to produce the full comparison plots of all three models. The output figures will be placed in the same folder as the Inference.csv file.  
     
