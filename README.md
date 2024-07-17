@@ -24,11 +24,15 @@ In this paper, we investigate Bayesian deep learning  for classifying bot accoun
 
 The dependencies for the networks can be installed with the following command:
 
-`$ conda env create -f requirements.yml`
+```bash
+$ conda env create -f requirements.yml
+```
 
 In the case that some packages do not install through the provided conda command, you can install them using pip once your conda environment is activated:
 
-`$ python3 -m pip install <package>`
+```bash
+$ python3 -m pip install <package>
+```
 
 Note that we have already included the [Multiplicative Normalizing Flows](https://github.com/janosh/torch-mnf) within the models folder. For more information regarding this package please follow the provided links. 
 
@@ -54,7 +58,8 @@ You can specify the dataset you wish to train on (Bloc, or Botometer) using the 
     
 To train the BNN on Bloc features you can run the following command:
     
-```$ python train_mnf.py --config config/default_config.json --method "BLOC"
+```
+$ python train_mnf.py --config config/default_config.json --method "BLOC"
 ```
 
 To train the BNN on Botometer features you can run the following command:
