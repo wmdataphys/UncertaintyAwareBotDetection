@@ -10,7 +10,8 @@ Social bots remain a major vector for spreading disinformation on social media a
 - [Requirements](#Section-1)
 - [Architecture](#Section-2)
 - [Usage](#Section-3)
-- [BLOC Feature Generation](#Section-4)
+- [Data Availability](#Section-4)
+- [BLOC Feature Generation](#Section-5)
     
 
 # Requirements
@@ -110,7 +111,11 @@ Note that the performance of the RF will be produced when you run its training s
     
 Additional plots (such as t-SNE) can be created using the __extras.ipynb__ notebook, along with example code for uncertainty aware decision making in which accounts are held for classification based on $|P_{pred} - 0.5| > 3\sigma(P_{pred}).$ 
 
-## BLOC Feature Generation
+# Data Availability
+
+The data that supports this study can be made available upon request. Please contact [cfanelli@wm.edu](mailto:cfanelli@wm.edu).
+
+# BLOC Feature Generation
 
 ### Install BLOC
 
