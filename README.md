@@ -100,7 +100,7 @@ This will create a folder named according to the __out_dir_BLOC__ or __out_dir_B
 You can then run plotting and performance analysis with the following command:
 
 ```
-$ python run_inference.py --config config/default_config.json --mlp_eval 1 --method "BLOC" --comparison 0
+$ python make_plots.py --config config/default_config.json --mlp_eval 1 --method "BLOC" --comparison 1
 ```
     
 This will produce plots and performance metrics for the BNN and DNN. If you have trained an RF model, you can also include set --comparison 1 to produce the full comparison plots of all three models. The output figures will be placed in the same folder as the Inference.csv file.  
