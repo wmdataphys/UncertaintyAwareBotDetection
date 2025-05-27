@@ -147,7 +147,7 @@ def main(config,resume,method):
                 logits = logits.unsqueeze(-1).expand(*logits.shape,num_samples)
                 sigma = sigma.unsqueeze(-1).expand(*sigma.shape,num_samples)
                 sampled_logits = logits + sigma * torch.normal(mean=0.0, std=1.0, size=logits.shape, device=logits.device)
-                sampled_p = F.sigmoid(sampled_logits.mean(dim=-1))
+                sampled_p = F.sigmoid(sampled_logits).mean(dim=-1)
 
             bce = loss_fn(sampled_p,y)
             kl_div = config['optimizer']['KL_scale']*net.kl_div() / len(train_loader)
@@ -186,7 +186,7 @@ def main(config,resume,method):
                     logits = logits.unsqueeze(-1).expand(*logits.shape,num_samples)
                     sigma = sigma.unsqueeze(-1).expand(*sigma.shape,num_samples)
                     sampled_logits = logits + sigma * torch.normal(mean=0.0, std=1.0, size=logits.shape, device=logits.device)
-                    sampled_p = F.sigmoid(sampled_logits.mean(dim=-1))
+                    sampled_p = F.sigmoid(sampled_logits).mean(dim=-1)
 
                     bce = loss_fn(sampled_p,y)
                     kl_div = config['optimizer']['KL_scale']*net.kl_div() / len(train_loader)
